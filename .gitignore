@@ -1,5 +1,7 @@
 .venv/
 __pycache__/
-.env
 *.pyc
+.env
+*.zip
+.DS_Store
 baml_client.tmp/
