@@ -37,8 +37,18 @@ def get_checks(checks: typing.Dict[CheckName, Check]) -> typing.List[Check]:
 def all_succeeded(checks: typing.Dict[CheckName, Check]) -> bool:
     return all(check.status == "succeeded" for check in get_checks(checks))
 # #########################################################################
-# Generated enums (3)
+# Generated enums (4)
 # #########################################################################
+
+class Plataforma(str, Enum):
+    UBER = "UBER"
+    NOVENTA_E_NOVE = "NOVENTA_E_NOVE"
+    IFOOD = "IFOOD"
+    RAPPI = "RAPPI"
+    LOGGI = "LOGGI"
+    LALAMOVE = "LALAMOVE"
+    OUTRA_PLATAFORMA = "OUTRA_PLATAFORMA"
+    NAO_MENCIONADA = "NAO_MENCIONADA"
 
 class TipoSinistro(str, Enum):
     MA = "MA"
@@ -76,6 +86,7 @@ class CampoFaltante(BaseModel):
 class ExtracaoSinistro(BaseModel):
     tipo_sinistro: TipoSinistro
     urgencia: Urgencia
+    plataforma_mencionada: Plataforma = Field(description='plataforma de mobilidade/delivery citada na narrativa. Use NAO_MENCIONADA se não houver referência explícita.')
     data_ocorrencia: typing.Optional[str] = Field(default=None, description='ISO 8601 YYYY-MM-DD se mencionada; null caso contrário. Nunca inventar.')
     hora_aproximada: typing.Optional[str] = Field(default=None, description='HH:MM se mencionada')
     local_ocorrencia: typing.Optional[str] = Field(default=None, description='cidade, rua, ou descrição textual')
@@ -89,7 +100,7 @@ class ExtracaoSinistro(BaseModel):
     confianca: float = Field(description='0.0 a 1.0 - sua certeza REAL na extração. Use < 0.5 se narrativa ambígua.')
     campos_faltantes: typing.List["CampoFaltante"] = Field(description='lista estruturada de gaps para abrir o sinistro')
     red_flags: typing.List["RedFlag"] = Field(description='sinais de inconsistência, fraude potencial, ou narrativa atípica')
-    requer_esclarecimento: bool = Field(description='true APENAS se o EVENTO em si não ficou claro (narrativa ambígua, contraditória, ou incompleta quanto ao que aconteceu). NÃO use true só porque faltam documentos — documentos faltantes vão em campos_faltantes. Este campo é sobre a compreensão do evento, não sobre completude documental.')
+    requer_esclarecimento: bool = Field(description='true APENAS se o EVENTO em si não ficou claro. NÃO use true só porque faltam documentos.')
     perguntas_sugeridas: typing.List[str] = Field(description='perguntas objetivas para o bot fazer ao segurado, se requer_esclarecimento=true')
 
 class PessoaEnvolvida(BaseModel):

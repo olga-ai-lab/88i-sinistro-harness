@@ -32,6 +32,8 @@ type_map = {
     "stream_types.Veiculo": stream_types.Veiculo,
 
 
+    "types.Plataforma": types.Plataforma,
+
     "types.TipoSinistro": types.TipoSinistro,
 
     "types.TipoVeiculo": types.TipoVeiculo,

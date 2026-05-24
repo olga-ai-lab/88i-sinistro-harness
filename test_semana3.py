@@ -115,30 +115,24 @@ HISTORICO_LIMPO = HistoricoSinistros(
 # ============================================================
 
 CASOS = [
-    # ----------------------------------------------------------
-    # 1. DITA Uber válido — elegível, mas com docs pendentes
-    # ----------------------------------------------------------
+    # 1. DITA Uber — mesmos de antes
     {
         "nome": "1. DITA Uber — elegível com docs pendentes",
         "tipo_sinistro": "DITA",
+        "plataforma": "UBER",
         "apolice": APOLICE_VIGENTE,
         "historico": HISTORICO_LIMPO,
-        "extracao": _ExtracaoStub(
-            tipo_sinistro="DITA",
-            documentos_mencionados=["BO online", "atestado médico"],
-            # não mencionou: laudo médico, comprovante app Uber
-        ),
+        "extracao": _ExtracaoStub(tipo_sinistro="DITA",
+            documentos_mencionados=["BO online", "atestado médico"]),
         "esperado_elegivel": True,
         "esperado_status": "pending_documents",
         "esperado_cobertura": "B_DITA",
     },
-
-    # ----------------------------------------------------------
-    # 2. Recusa por carência (D2)
-    # ----------------------------------------------------------
+    # 2. Recusa por carência (D2) — regime UBER
     {
         "nome": "2. DITA Uber — recusa por carência (D2)",
         "tipo_sinistro": "DITA",
+        "plataforma": "UBER",
         "apolice": APOLICE_CARENCIA,
         "historico": HISTORICO_LIMPO,
         "extracao": _ExtracaoStub(tipo_sinistro="DITA"),
@@ -146,30 +140,23 @@ CASOS = [
         "esperado_status": "rejected",
         "esperado_regra": "D2",
     },
-
-    # ----------------------------------------------------------
-    # 3. Produto A / moto → recusa D6 (somente automóvel)
-    # ----------------------------------------------------------
+    # 3. Moto Uber Produto A — recusa D6 (somente automóvel)
     {
         "nome": "3. IAT moto Uber — recusa D6 (somente automóvel)",
         "tipo_sinistro": "IAT",
+        "plataforma": "UBER",
         "apolice": APOLICE_PRODUTO_A,
         "historico": HISTORICO_LIMPO,
-        "extracao": _ExtracaoStub(
-            tipo_sinistro="IAT",
-            veiculo=_Veiculo(tipo="MOTO"),
-        ),
+        "extracao": _ExtracaoStub(tipo_sinistro="IAT", veiculo=_Veiculo(tipo="MOTO")),
         "esperado_elegivel": False,
         "esperado_status": "rejected",
         "esperado_regra": "D6",
     },
-
-    # ----------------------------------------------------------
-    # 4. IPA Uber → recusa D7 (só DITA válida no bilhete Uber)
-    # ----------------------------------------------------------
+    # 4. IPA Uber — recusa D7 (só DITA válida no bilhete Uber)
     {
-        "nome": "4. IPA Uber — recusa D7 (cobertura não disponível no bilhete Uber)",
+        "nome": "4. IPA Uber — recusa D7",
         "tipo_sinistro": "IPA",
+        "plataforma": "UBER",
         "apolice": APOLICE_VIGENTE,
         "historico": HISTORICO_LIMPO,
         "extracao": _ExtracaoStub(tipo_sinistro="IPA"),
@@ -177,29 +164,68 @@ CASOS = [
         "esperado_status": "rejected",
         "esperado_regra": "D7",
     },
-
-    # ----------------------------------------------------------
-    # 5. BAGAGEM com docs mencionados → aprovado sem pendências
-    # ----------------------------------------------------------
+    # 5. BAGAGEM — elegível, todos os docs mencionados
     {
-        "nome": "5. BAGAGEM Uber Envios — elegível, todos os docs mencionados",
+        "nome": "5. BAGAGEM Uber — aprovado",
         "tipo_sinistro": "BAGAGEM",
+        "plataforma": "UBER",
         "apolice": APOLICE_VIGENTE_C,
         "historico": HISTORICO_LIMPO,
-        "extracao": _ExtracaoStub(
-            tipo_sinistro="BAGAGEM",
-            documentos_mencionados=[
-                "BO policial",
-                "declaração prévia",
-                "nota fiscal sefaz",
-                "comprovante de existência",
-                "cnh ativa",
-                "cpf rg do responsável",
-            ],
-        ),
+        "extracao": _ExtracaoStub(tipo_sinistro="BAGAGEM",
+            documentos_mencionados=["BO policial", "declaração prévia", "nota fiscal sefaz",
+                                    "comprovante de existência", "cnh ativa", "cpf rg do responsável"]),
         "esperado_elegivel": True,
         "esperado_status": "approved",
         "esperado_cobertura": "C_COB_A",
+    },
+    # 6. IPA 99Entrega — DEVE SER ELEGÍVEL (CG padrão, sem restrição Uber)
+    {
+        "nome": "6. IPA 99Entrega — elegível (regime PADRAO, sem restrição D7)",
+        "tipo_sinistro": "IPA",
+        "plataforma": "NOVENTA_E_NOVE",
+        "apolice": APOLICE_VIGENTE,
+        "historico": HISTORICO_LIMPO,
+        "extracao": _ExtracaoStub(tipo_sinistro="IPA"),
+        "esperado_elegivel": True,
+        "esperado_status": "pending_documents",
+        "esperado_cobertura": "B_IPA",
+    },
+    # 7. MA iFood — DEVE SER ELEGÍVEL (regime PADRAO)
+    {
+        "nome": "7. MA iFood — elegível (regime PADRAO)",
+        "tipo_sinistro": "MA",
+        "plataforma": "IFOOD",
+        "apolice": APOLICE_VIGENTE,
+        "historico": HISTORICO_LIMPO,
+        "extracao": _ExtracaoStub(tipo_sinistro="MA"),
+        "esperado_elegivel": True,
+        "esperado_status": "pending_documents",
+        "esperado_cobertura": "B_MA",
+    },
+    # 8. IAT moto Rappi — DEVE SER ELEGÍVEL (D6 não se aplica no regime PADRAO)
+    {
+        "nome": "8. IAT moto Rappi — elegível (D6 não se aplica no regime PADRAO)",
+        "tipo_sinistro": "IAT",
+        "plataforma": "RAPPI",
+        "apolice": APOLICE_PRODUTO_A,
+        "historico": HISTORICO_LIMPO,
+        "extracao": _ExtracaoStub(tipo_sinistro="IAT", veiculo=_Veiculo(tipo="MOTO")),
+        "esperado_elegivel": True,
+        "esperado_status": "pending_documents",
+        "esperado_cobertura": "A_COB_II",
+    },
+    # 9. DITA plataforma NAO_MENCIONADA — regime PADRAO, elegível
+    {
+        "nome": "9. DITA plataforma não mencionada — regime PADRAO, elegível",
+        "tipo_sinistro": "DITA",
+        "plataforma": "NAO_MENCIONADA",
+        "apolice": APOLICE_VIGENTE,
+        "historico": HISTORICO_LIMPO,
+        "extracao": _ExtracaoStub(tipo_sinistro="DITA",
+            documentos_mencionados=["atestado médico", "laudo", "comprovante"]),
+        "esperado_elegivel": True,
+        "esperado_status": "pending_documents",
+        "esperado_cobertura": "B_DITA",
     },
 ]
 
@@ -219,8 +245,6 @@ def executar():
 
         # Adapta o stub para ter .tipo_sinistro como objeto com .value
         extracao = caso["extracao"]
-        # Rules engine chama hasattr(ts, "value") — o stub usa string direta
-        # Patch: criar objeto com .value
         class _TS:
             def __init__(self, v): self.value = v
         extracao.tipo_sinistro = _TS(caso["tipo_sinistro"])
@@ -230,7 +254,7 @@ def executar():
             dados_apolice=caso["apolice"],
             historico_sinistros=caso["historico"],
             extracao=extracao,
-            plataforma="UBER",
+            plataforma=caso.get("plataforma", "NAO_MENCIONADA"),
         )
 
         # Verificações

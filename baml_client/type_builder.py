@@ -22,12 +22,16 @@ class TypeBuilder(type_builder.TypeBuilder):
         super().__init__(classes=set(
           ["CampoFaltante","ExtracaoSinistro","PessoaEnvolvida","RedFlag","Veiculo",]
         ), enums=set(
-          ["TipoSinistro","TipoVeiculo","Urgencia",]
+          ["Plataforma","TipoSinistro","TipoVeiculo","Urgencia",]
         ), runtime=DO_NOT_USE_DIRECTLY_UNLESS_YOU_KNOW_WHAT_YOURE_DOING_RUNTIME)
 
     # #########################################################################
-    # Generated enums 3
+    # Generated enums 4
     # #########################################################################
+
+    @property
+    def Plataforma(self) -> "PlataformaViewer":
+        return PlataformaViewer(self)
 
     @property
     def TipoSinistro(self) -> "TipoSinistroViewer":
@@ -69,8 +73,74 @@ class TypeBuilder(type_builder.TypeBuilder):
 
 
 # #########################################################################
-# Generated enums 3
+# Generated enums 4
 # #########################################################################
+
+class PlataformaAst:
+    def __init__(self, tb: type_builder.TypeBuilder):
+        _tb = tb._tb # type: ignore (we know how to use this private attribute)
+        self._bldr = _tb.enum("Plataforma")
+        self._values: typing.Set[str] = set([  "UBER",  "NOVENTA_E_NOVE",  "IFOOD",  "RAPPI",  "LOGGI",  "LALAMOVE",  "OUTRA_PLATAFORMA",  "NAO_MENCIONADA",  ])
+        self._vals = PlataformaValues(self._bldr, self._values)
+
+    def type(self) -> baml_py.FieldType:
+        return self._bldr.field()
+
+    @property
+    def values(self) -> "PlataformaValues":
+        return self._vals
+
+
+class PlataformaViewer(PlataformaAst):
+    def __init__(self, tb: type_builder.TypeBuilder):
+        super().__init__(tb)
+
+    
+    def list_values(self) -> typing.List[typing.Tuple[str, type_builder.EnumValueViewer]]:
+        return [(name, type_builder.EnumValueViewer(self._bldr.value(name))) for name in self._values]
+    
+
+class PlataformaValues:
+    def __init__(self, enum_bldr: baml_py.EnumBuilder, values: typing.Set[str]):
+        self.__bldr = enum_bldr
+        self.__values = values # type: ignore (we know how to use this private attribute) # noqa: F821
+
+    
+    
+    @property
+    def UBER(self) -> type_builder.EnumValueViewer:
+        return type_builder.EnumValueViewer(self.__bldr.value("UBER"))
+    
+    @property
+    def NOVENTA_E_NOVE(self) -> type_builder.EnumValueViewer:
+        return type_builder.EnumValueViewer(self.__bldr.value("NOVENTA_E_NOVE"))
+    
+    @property
+    def IFOOD(self) -> type_builder.EnumValueViewer:
+        return type_builder.EnumValueViewer(self.__bldr.value("IFOOD"))
+    
+    @property
+    def RAPPI(self) -> type_builder.EnumValueViewer:
+        return type_builder.EnumValueViewer(self.__bldr.value("RAPPI"))
+    
+    @property
+    def LOGGI(self) -> type_builder.EnumValueViewer:
+        return type_builder.EnumValueViewer(self.__bldr.value("LOGGI"))
+    
+    @property
+    def LALAMOVE(self) -> type_builder.EnumValueViewer:
+        return type_builder.EnumValueViewer(self.__bldr.value("LALAMOVE"))
+    
+    @property
+    def OUTRA_PLATAFORMA(self) -> type_builder.EnumValueViewer:
+        return type_builder.EnumValueViewer(self.__bldr.value("OUTRA_PLATAFORMA"))
+    
+    @property
+    def NAO_MENCIONADA(self) -> type_builder.EnumValueViewer:
+        return type_builder.EnumValueViewer(self.__bldr.value("NAO_MENCIONADA"))
+    
+    
+
 
 class TipoSinistroAst:
     def __init__(self, tb: type_builder.TypeBuilder):
@@ -302,7 +372,7 @@ class ExtracaoSinistroAst:
     def __init__(self, tb: type_builder.TypeBuilder):
         _tb = tb._tb # type: ignore (we know how to use this private attribute)
         self._bldr = _tb.class_("ExtracaoSinistro")
-        self._properties: typing.Set[str] = set([  "tipo_sinistro",  "urgencia",  "data_ocorrencia",  "hora_aproximada",  "local_ocorrencia",  "descricao_evento",  "veiculo",  "pessoas",  "ha_vitimas_fatais",  "ha_feridos",  "envolve_terceiros",  "documentos_mencionados",  "confianca",  "campos_faltantes",  "red_flags",  "requer_esclarecimento",  "perguntas_sugeridas",  ])
+        self._properties: typing.Set[str] = set([  "tipo_sinistro",  "urgencia",  "plataforma_mencionada",  "data_ocorrencia",  "hora_aproximada",  "local_ocorrencia",  "descricao_evento",  "veiculo",  "pessoas",  "ha_vitimas_fatais",  "ha_feridos",  "envolve_terceiros",  "documentos_mencionados",  "confianca",  "campos_faltantes",  "red_flags",  "requer_esclarecimento",  "perguntas_sugeridas",  ])
         self._props = ExtracaoSinistroProperties(self._bldr, self._properties)
 
     def type(self) -> baml_py.FieldType:
@@ -337,6 +407,10 @@ class ExtracaoSinistroProperties:
     @property
     def urgencia(self) -> type_builder.ClassPropertyViewer:
         return type_builder.ClassPropertyViewer(self.__bldr.property("urgencia"))
+    
+    @property
+    def plataforma_mencionada(self) -> type_builder.ClassPropertyViewer:
+        return type_builder.ClassPropertyViewer(self.__bldr.property("plataforma_mencionada"))
     
     @property
     def data_ocorrencia(self) -> type_builder.ClassPropertyViewer:

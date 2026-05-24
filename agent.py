@@ -270,16 +270,23 @@ def no_pronto_para_analise(state: SinistroState) -> dict:
     )
 
     # --- Semana 3: avaliação de cobertura ---
+    # Plataforma vem da extração BAML — dinâmica, não hardcoded
+    plataforma_str = (
+        extracao.plataforma_mencionada.value
+        if hasattr(extracao.plataforma_mencionada, "value")
+        else str(extracao.plataforma_mencionada)
+    ) if hasattr(extracao, "plataforma_mencionada") else "NAO_MENCIONADA"
+
     veredicto = avaliar_cobertura(
         tipo_sinistro=tipo_label,
         dados_apolice=state.get("dados_apolice"),
         historico_sinistros=state.get("historico_sinistros"),
         extracao=extracao,
-        plataforma="UBER",
+        plataforma=plataforma_str,
     )
     log.append(
-        f"cobertura: status={veredicto.status} cobertura={veredicto.cobertura} "
-        f"docs_pendentes={len(veredicto.docs_pendentes)}"
+        f"cobertura: plataforma={plataforma_str} status={veredicto.status} "
+        f"cobertura={veredicto.cobertura} docs_pendentes={len(veredicto.docs_pendentes)}"
     )
 
     # Registra sinistro e gera protocolo
@@ -356,15 +363,20 @@ def no_analisar_documentos(state: SinistroState) -> dict:
         if extracao and hasattr(extracao.tipo_sinistro, "value")
         else "INDEFINIDO"
     )
+    plataforma_label = (
+        extracao.plataforma_mencionada.value
+        if extracao and hasattr(extracao, "plataforma_mencionada") and hasattr(extracao.plataforma_mencionada, "value")
+        else "NAO_MENCIONADA"
+    )
     cobertura_label = veredicto_cob.cobertura if veredicto_cob else "desconhecida"
     protocolo = state.get("protocolo") or "sem-protocolo"
 
     contexto = (
         f"Protocolo: {protocolo}\n"
         f"Tipo de sinistro: {tipo_label}\n"
+        f"Plataforma: {plataforma_label}\n"
         f"Cobertura identificada: {cobertura_label}\n"
         f"Narrativa original: {state['narrativa_original'][:300]}\n"
-        f"Plataforma: UBER\n"
     )
 
     try:

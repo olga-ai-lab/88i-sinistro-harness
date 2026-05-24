@@ -34,6 +34,7 @@ class CampoFaltante(BaseModel):
 class ExtracaoSinistro(BaseModel):
     tipo_sinistro: typing.Optional[types.TipoSinistro] = None
     urgencia: typing.Optional[types.Urgencia] = None
+    plataforma_mencionada: typing.Optional[types.Plataforma] = Field(default=None, description='plataforma de mobilidade/delivery citada na narrativa. Use NAO_MENCIONADA se não houver referência explícita.')
     data_ocorrencia: typing.Optional[str] = Field(default=None, description='ISO 8601 YYYY-MM-DD se mencionada; null caso contrário. Nunca inventar.')
     hora_aproximada: typing.Optional[str] = Field(default=None, description='HH:MM se mencionada')
     local_ocorrencia: typing.Optional[str] = Field(default=None, description='cidade, rua, ou descrição textual')
@@ -47,7 +48,7 @@ class ExtracaoSinistro(BaseModel):
     confianca: typing.Optional[float] = Field(default=None, description='0.0 a 1.0 - sua certeza REAL na extração. Use < 0.5 se narrativa ambígua.')
     campos_faltantes: typing.List["CampoFaltante"] = Field(description='lista estruturada de gaps para abrir o sinistro')
     red_flags: typing.List["RedFlag"] = Field(description='sinais de inconsistência, fraude potencial, ou narrativa atípica')
-    requer_esclarecimento: typing.Optional[bool] = Field(default=None, description='true APENAS se o EVENTO em si não ficou claro (narrativa ambígua, contraditória, ou incompleta quanto ao que aconteceu). NÃO use true só porque faltam documentos — documentos faltantes vão em campos_faltantes. Este campo é sobre a compreensão do evento, não sobre completude documental.')
+    requer_esclarecimento: typing.Optional[bool] = Field(default=None, description='true APENAS se o EVENTO em si não ficou claro. NÃO use true só porque faltam documentos.')
     perguntas_sugeridas: typing.List[str] = Field(description='perguntas objetivas para o bot fazer ao segurado, se requer_esclarecimento=true')
 
 class PessoaEnvolvida(BaseModel):

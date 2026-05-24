@@ -1,103 +1,89 @@
 """
 dmn_tables.py — Tabelas de decisão (inspirado em DMN) para regras 88i (Semana 3)
 
-Estrutura: cada tabela é um dict/list Python auditável — sem XML, sem biblioteca externa.
-Facilita auditoria SUSEP e permite exportação futura para BPMN/DMN se necessário.
+Semana 4.5: refatorado para suporte multi-plataforma.
+  - regime "UBER": Condições Particulares Uber (restrições específicas)
+  - regime "PADRAO": CG geral (99, iFood, Rappi, Loggi, Lalamove, NAO_MENCIONADA)
 
-Fonte: Condições Gerais 88i março/2026 + skill olga-analista-seguros-88i.
-NÃO alterar sem atualizar as referências na skill e nos testes.
-
-Convenções:
-  - produto: "A" | "B" | "C" | "TODOS"
-  - tipo_sinistro (BAML): DITA | IPA | MA | DMHO | MAC | IAT | AF | BAGAGEM | INDEFINIDO
-  - cobertura (interno): "A_COB_I" | "A_COB_II" | "B_DITA" | "C_COB_A" | "C_COB_B"
-  - plataforma: "UBER" | "OUTRA" | None
+Fonte: CGs 88i março/2026 + CG AP 01/02/2024 + skill olga-analista-seguros-88i.
 """
 
 from __future__ import annotations
 
+# Plataformas que usam CG padrão (sem CP Uber)
+PLATAFORMAS_PADRAO = {
+    "NOVENTA_E_NOVE", "IFOOD", "RAPPI", "LOGGI",
+    "LALAMOVE", "OUTRA_PLATAFORMA", "NAO_MENCIONADA",
+}
+
+PLATAFORMAS_UBER = {"UBER"}
+
+
+def resolver_regime(plataforma: str) -> str:
+    """Retorna 'UBER' se plataforma com CP Uber, 'PADRAO' caso contrário."""
+    if plataforma and plataforma.upper() in PLATAFORMAS_UBER:
+        return "UBER"
+    return "PADRAO"
+
 
 # ============================================================
-# Tabela 1: mapeamento tipo_sinistro → cobertura 88i
+# Tabela 1: tipo_sinistro + regime → cobertura
 # ============================================================
-# Dado o tipo extraído pelo BAML + plataforma, qual cobertura se aplica?
-# Retorna lista porque um tipo pode mapear para múltiplas coberturas.
 
 TIPO_SINISTRO_COBERTURA: list[dict] = [
-    # Produto A — Impedimento ao Trabalho
-    {
-        "tipo_sinistro": "DITA",
-        "plataforma": "UBER",
-        "produto": "B",
-        "cobertura": "B_DITA",
-        "descricao": "Diária por Incapacidade Temporária por Acidente — única cobertura AP Uber",
-    },
-    {
-        "tipo_sinistro": "IAT",
-        "plataforma": "UBER",
-        "produto": "A",
-        "cobertura": "A_COB_II",
-        "descricao": "Colisão do Veículo de Trabalho — impedimento ao trabalho Uber",
-        "restricao": "somente_automovel",
-    },
-    {
-        "tipo_sinistro": "IAT",
-        "plataforma": "UBER",
-        "produto": "A",
-        "cobertura": "A_COB_I",
-        "descricao": "Roubo/Furto do Veículo de Trabalho — impedimento ao trabalho Uber",
-        "restricao": "somente_automovel",
-    },
-    # Produto B — Acidentes Pessoais (Uber: somente DITA)
-    {
-        "tipo_sinistro": "IPA",
-        "plataforma": "UBER",
-        "produto": "B",
-        "cobertura": None,
-        "descricao": "IPA NÃO se aplica ao bilhete Uber (Cond. Particulares 1.1)",
-        "elegivel": False,
-        "motivo_recusa": "D7: IPA não cobre bilhete Uber — somente DITA é válida",
-    },
-    {
-        "tipo_sinistro": "MA",
-        "plataforma": "UBER",
-        "produto": "B",
-        "cobertura": None,
-        "descricao": "MA NÃO se aplica ao bilhete Uber",
-        "elegivel": False,
-        "motivo_recusa": "D7: MA não cobre bilhete Uber — somente DITA é válida",
-    },
-    {
-        "tipo_sinistro": "DMHO",
-        "plataforma": "UBER",
-        "produto": "B",
-        "cobertura": None,
-        "descricao": "DMHO NÃO se aplica ao bilhete Uber",
-        "elegivel": False,
-        "motivo_recusa": "D7: DMHO não cobre bilhete Uber — somente DITA é válida",
-    },
-    # Produto C — Bagagens/Encomendas
-    {
-        "tipo_sinistro": "BAGAGEM",
-        "plataforma": "UBER",
-        "produto": "C",
-        "cobertura": "C_COB_A",
-        "descricao": "Roubo/Furto de Encomenda — Uber Envios",
-    },
-    {
-        "tipo_sinistro": "BAGAGEM",
-        "plataforma": "UBER",
-        "produto": "C",
-        "cobertura": "C_COB_B",
-        "descricao": "Danos Materiais à Encomenda — Uber Envios",
-    },
+
+    # --- REGIME UBER (Condições Particulares Uber) ---
+
+    {"tipo_sinistro": "DITA",    "regime": "UBER", "produto": "B", "cobertura": "B_DITA",
+     "descricao": "DITA — única cobertura AP válida no bilhete Uber"},
+    {"tipo_sinistro": "IAT",     "regime": "UBER", "produto": "A", "cobertura": "A_COB_II",
+     "descricao": "Colisão do Veículo — Impedimento ao Trabalho Uber", "restricao": "somente_automovel"},
+    {"tipo_sinistro": "IAT",     "regime": "UBER", "produto": "A", "cobertura": "A_COB_I",
+     "descricao": "Roubo/Furto do Veículo — Impedimento ao Trabalho Uber", "restricao": "somente_automovel"},
+    {"tipo_sinistro": "BAGAGEM", "regime": "UBER", "produto": "C", "cobertura": "C_COB_A",
+     "descricao": "Roubo/Furto de Encomenda — Uber Envios"},
+    {"tipo_sinistro": "BAGAGEM", "regime": "UBER", "produto": "C", "cobertura": "C_COB_B",
+     "descricao": "Danos Materiais à Encomenda — Uber Envios"},
+    # Coberturas explicitamente bloqueadas no bilhete Uber
+    {"tipo_sinistro": "IPA",  "regime": "UBER", "produto": "B", "cobertura": None,
+     "elegivel": False, "motivo_recusa": "D7: IPA não cobre bilhete Uber — somente DITA é válida"},
+    {"tipo_sinistro": "MA",   "regime": "UBER", "produto": "B", "cobertura": None,
+     "elegivel": False, "motivo_recusa": "D7: MA não cobre bilhete Uber — somente DITA é válida"},
+    {"tipo_sinistro": "DMHO", "regime": "UBER", "produto": "B", "cobertura": None,
+     "elegivel": False, "motivo_recusa": "D7: DMHO não cobre bilhete Uber — somente DITA é válida"},
+    {"tipo_sinistro": "MAC",  "regime": "UBER", "produto": "B", "cobertura": None,
+     "elegivel": False, "motivo_recusa": "D7: MAC não cobre bilhete Uber — somente DITA é válida"},
+    {"tipo_sinistro": "AF",   "regime": "UBER", "produto": "B", "cobertura": None,
+     "elegivel": False, "motivo_recusa": "D7: AF não cobre bilhete Uber — somente DITA é válida"},
+
+    # --- REGIME PADRAO (CG geral — 99, iFood, Rappi, Loggi, etc.) ---
+
+    {"tipo_sinistro": "DITA",    "regime": "PADRAO", "produto": "B", "cobertura": "B_DITA",
+     "descricao": "DITA — Diária por Incapacidade Temporária por Acidente"},
+    {"tipo_sinistro": "IPA",     "regime": "PADRAO", "produto": "B", "cobertura": "B_IPA",
+     "descricao": "IPA — Invalidez Permanente Total ou Parcial por Acidente"},
+    {"tipo_sinistro": "MA",      "regime": "PADRAO", "produto": "B", "cobertura": "B_MA",
+     "descricao": "MA — Morte Acidental"},
+    {"tipo_sinistro": "DMHO",    "regime": "PADRAO", "produto": "B", "cobertura": "B_DMHO",
+     "descricao": "DMHO — Despesas Médico-Hospitalares e Odontológicas"},
+    {"tipo_sinistro": "MAC",     "regime": "PADRAO", "produto": "B", "cobertura": "B_MAC",
+     "descricao": "MAC — Morte Acidental por Crime"},
+    {"tipo_sinistro": "AF",      "regime": "PADRAO", "produto": "B", "cobertura": "B_AF",
+     "descricao": "AF — Auxílio Funeral por Acidente"},
+    {"tipo_sinistro": "IAT",     "regime": "PADRAO", "produto": "A", "cobertura": "A_COB_II",
+     "descricao": "Colisão do Veículo — Impedimento ao Trabalho (CG padrão)"},
+    {"tipo_sinistro": "IAT",     "regime": "PADRAO", "produto": "A", "cobertura": "A_COB_I",
+     "descricao": "Roubo/Furto do Veículo — Impedimento ao Trabalho (CG padrão)"},
+    {"tipo_sinistro": "BAGAGEM", "regime": "PADRAO", "produto": "C", "cobertura": "C_COB_A",
+     "descricao": "Roubo/Furto de Encomenda — Last Mile Delivery"},
+    {"tipo_sinistro": "BAGAGEM", "regime": "PADRAO", "produto": "C", "cobertura": "C_COB_B",
+     "descricao": "Danos Materiais à Encomenda — Last Mile Delivery"},
 ]
 
 
 # ============================================================
 # Tabela 2: documentos obrigatórios por cobertura
 # ============================================================
-# "kit_basico" é comum a todos — listado separadamente para não repetir.
 
 KIT_BASICO = [
     "RG (cópia)",
@@ -113,14 +99,42 @@ DOCS_POR_COBERTURA: dict[str, list[str]] = {
         "Atestado médico",
         "Receituário médico",
         "Relatório do médico assistente com diagnóstico e CID",
-        "Comprovante de dias desconectado da plataforma (app Uber)",
+        "Comprovante de dias desconectado da plataforma (app)",
         "BO (se houver) e peças do inquérito",
+    ],
+    "B_IPA": [
+        "Laudo de invalidez com CRM",
+        "Relatório médico com descrição das sequelas permanentes",
+        "BO ou BRAT (se acidente de trânsito)",
+        "Exames de imagem (raio-x, ressonância) confirmando a lesão",
+    ],
+    "B_MA": [
+        "Certidão de óbito",
+        "Laudo necroscópico ou relatório do IML",
+        "BO (quando aplicável)",
+        "Documentos do beneficiário (RG, CPF, comprovante de vínculo)",
+    ],
+    "B_DMHO": [
+        "Notas fiscais/recibos das despesas médicas",
+        "Relatório médico justificando os procedimentos",
+        "Laudos e exames realizados",
+        "BO ou BRAT (se acidente de trânsito)",
+    ],
+    "B_MAC": [
+        "Certidão de óbito",
+        "Boletim de Ocorrência com descrição do crime",
+        "Laudo necroscópico ou relatório do IML",
+        "Documentos do beneficiário",
+    ],
+    "B_AF": [
+        "Certidão de óbito",
+        "Notas fiscais do serviço funerário",
+        "Documentos do beneficiário",
     ],
     "A_COB_I": [
         "BO (original ou autenticado) com local, descrição, bem sinistrado, data e hora",
         "CRLV do veículo",
         "Comprovante de retorno ao trabalho",
-        # Certidão de Não Localização NÃO se aplica à Uber
     ],
     "A_COB_II": [
         "BRAT (Boletim de Registro de Acidente de Trânsito)",
@@ -128,7 +142,6 @@ DOCS_POR_COBERTURA: dict[str, list[str]] = {
         "Laudo de vistoria de oficina com prazo de conserto",
         "Relatório da oficina com reparos realizados e datas",
         "Fotos dos reparos",
-        # CRLV e comprovante de retorno NÃO se aplicam à Uber
     ],
     "C_COB_A": [
         "BO (original ou autenticado) com descrição da encomenda",
@@ -151,127 +164,53 @@ DOCS_POR_COBERTURA: dict[str, list[str]] = {
 
 
 # ============================================================
-# Tabela 3: regras D1-D15 com metadados para auditoria
+# Tabela 3: regras D com metadados de auditoria
 # ============================================================
 
 REGRAS_D: list[dict] = [
-    {
-        "codigo": "D1",
-        "descricao": "Apólice/bilhete vigente na data do fato",
-        "produto": "TODOS",
-        "consequencia_falha": "rejected",
-        "campo_verificado": "dados_apolice.vigente_hoje",
-    },
-    {
-        "codigo": "D2",
-        "descricao": "Evento fora do período de carência",
-        "produto": "TODOS",
-        "consequencia_falha": "rejected",
-        "campo_verificado": "dados_apolice.carencia_ativa",
-    },
-    {
-        "codigo": "D3",
-        "descricao": "Evento durante período de trabalho / com seguro ativado",
-        "produto": "A_C",
-        "consequencia_falha": "pending_documents",
-        "campo_verificado": "extracao.documentos_mencionados",
-    },
-    {
-        "codigo": "D4",
-        "descricao": "Cooldown respeitado: 90d (Prod.A), 30d (Prod.B/Uber) após mesmo evento",
-        "produto": "A_B",
-        "consequencia_falha": "rejected",
-        "campo_verificado": "historico_sinistros.ultimo_sinistro_data",
-    },
-    {
-        "codigo": "D6",
-        "descricao": "Tipo de veículo válido: SOMENTE automóvel para Prod.A/Uber",
-        "produto": "A",
-        "consequencia_falha": "rejected",
-        "campo_verificado": "extracao.veiculo.tipo",
-    },
-    {
-        "codigo": "D7",
-        "descricao": "Coberturas III e IV NÃO se aplicam ao bilhete Uber",
-        "produto": "A",
-        "plataforma": "UBER",
-        "consequencia_falha": "rejected",
-        "campo_verificado": "tipo_sinistro_mapeado",
-    },
-    {
-        "codigo": "D8",
-        "descricao": "Evento enquadra em risco coberto",
-        "produto": "TODOS",
-        "consequencia_falha": "rejected",
-        "campo_verificado": "cobertura_aplicavel",
-    },
-    {
-        "codigo": "D11",
-        "descricao": "NF NÃO é de parente do segurado",
-        "produto": "C",
-        "consequencia_falha": "rejected",
-        "campo_verificado": "extracao.red_flags",
-    },
-    {
-        "codigo": "D12",
-        "descricao": "Encomenda constava em declaração prévia",
-        "produto": "C",
-        "consequencia_falha": "rejected",
-        "campo_verificado": "extracao.documentos_mencionados",
-    },
-    {
-        "codigo": "D14",
-        "descricao": "Tratamento médico iniciado em até 30 dias do acidente",
-        "produto": "B",
-        "consequencia_falha": "rejected",
-        "campo_verificado": "extracao.data_ocorrencia",
-    },
-    {
-        "codigo": "D15",
-        "descricao": "Condutor com CNH ativa no momento do sinistro",
-        "produto": "A_B",
-        "consequencia_falha": "rejected",
-        "campo_verificado": "extracao.documentos_mencionados",
-    },
+    {"codigo": "D1",  "descricao": "Apólice vigente na data do fato",                        "produto": "TODOS", "consequencia_falha": "rejected"},
+    {"codigo": "D2",  "descricao": "Evento fora do período de carência",                     "produto": "TODOS", "consequencia_falha": "rejected"},
+    {"codigo": "D4",  "descricao": "Cooldown respeitado (90d padrão, 30d DITA/Uber)",        "produto": "A_B",   "consequencia_falha": "rejected"},
+    {"codigo": "D6",  "descricao": "Somente automóvel para Prod.A/Uber (não se aplica no regime PADRAO)", "produto": "A", "regime": "UBER", "consequencia_falha": "rejected"},
+    {"codigo": "D7",  "descricao": "Coberturas restritas NÃO cobrem bilhete Uber",           "produto": "B",     "regime": "UBER",   "consequencia_falha": "rejected"},
+    {"codigo": "D8",  "descricao": "Evento enquadra em risco coberto",                       "produto": "TODOS", "consequencia_falha": "rejected"},
+    {"codigo": "D11", "descricao": "NF NÃO é de parente do segurado",                        "produto": "C",     "consequencia_falha": "rejected"},
+    {"codigo": "D12", "descricao": "Encomenda constava em declaração prévia",                "produto": "C",     "consequencia_falha": "rejected"},
+    {"codigo": "D14", "descricao": "Tratamento médico iniciado em até 30 dias do acidente",  "produto": "B",     "consequencia_falha": "rejected"},
+    {"codigo": "D15", "descricao": "Condutor com CNH ativa no momento do sinistro",          "produto": "A_B",   "consequencia_falha": "rejected"},
 ]
 
 
 # ============================================================
-# Tabela 4: valores máximos e cooldowns por cobertura
+# Tabela 4: parâmetros por cobertura
 # ============================================================
-# Valores são placeholders — em produção viriam do bilhete/apólice no Supabase.
 
 PARAMETROS_COBERTURA: dict[str, dict] = {
     "B_DITA": {
-        "valor_diaria_placeholder": "baseado na classificação do motorista no Uber",
-        "cooldown_dias": 30,
+        "valor_diaria_placeholder": "baseado na classificação do motorista na plataforma",
+        "cooldown_dias": 30,          # Uber: 30 dias (CP Uber)
+        "cooldown_dias_padrao": 90,   # CG geral: 90 dias
         "franquia": "definida no bilhete",
-        "carencia_dias": 0,  # zero carência para acidentes pessoais
+        "carencia_dias": 0,
         "limite_dias_afastamento": "menor entre laudo e dias offline no app",
     },
-    "A_COB_I": {
-        "valor_diaria_placeholder": "renda média dos últimos 28 dias no Uber",
+    "B_IPA":  {"cooldown_dias": None, "carencia_dias": 0},
+    "B_MA":   {"cooldown_dias": None, "carencia_dias": 0},
+    "B_DMHO": {"cooldown_dias": None, "carencia_dias": 0},
+    "B_MAC":  {"cooldown_dias": None, "carencia_dias": 0},
+    "B_AF":   {"cooldown_dias": None, "carencia_dias": 0},
+    "A_COB_I":  {
+        "valor_diaria_placeholder": "renda média dos últimos 28 dias na plataforma",
         "cooldown_dias": 90,
         "franquia": "data do roubo",
-        "carencia_dias": None,  # verificar bilhete
-        "limite_dias_afastamento": "menor entre dias reais e dias sem corridas",
+        "restricao_veiculo_uber": "somente_automovel",
     },
     "A_COB_II": {
-        "valor_diaria_placeholder": "renda média dos últimos 28 dias no Uber",
+        "valor_diaria_placeholder": "renda média dos últimos 28 dias na plataforma",
         "cooldown_dias": 90,
         "franquia": "data de análise por mecânico",
-        "carencia_dias": None,
-        "limite_dias_afastamento": "menor entre dias reais e dias sem corridas",
-        "restricao_veiculo": "somente_automovel",
+        "restricao_veiculo_uber": "somente_automovel",
     },
-    "C_COB_A": {
-        "valor_maximo": "menor entre NF e LMI do bilhete (sem NF: R$ 300,00)",
-        "cooldown_dias": None,
-        "franquia": "definida no bilhete",
-    },
-    "C_COB_B": {
-        "valor_maximo": "menor entre NF e LMI do bilhete",
-        "cooldown_dias": None,
-        "franquia": "definida no bilhete",
-    },
+    "C_COB_A": {"valor_maximo": "menor entre NF e LMI do bilhete (sem NF: R$ 300,00)", "cooldown_dias": None},
+    "C_COB_B": {"valor_maximo": "menor entre NF e LMI do bilhete", "cooldown_dias": None},
 }

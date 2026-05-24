@@ -26,6 +26,7 @@ from dmn_tables import (
     KIT_BASICO,
     DOCS_POR_COBERTURA,
     PARAMETROS_COBERTURA,
+    resolver_regime,
 )
 
 
@@ -98,25 +99,29 @@ def _dias_desde(data: Optional[date]) -> Optional[int]:
 
 def avaliar_cobertura(
     tipo_sinistro: Optional[str],
-    dados_apolice,        # DadosApolice | None
-    historico_sinistros,  # HistoricoSinistros | None
-    extracao,             # ExtracaoSinistro | None
-    plataforma: str = "UBER",
+    dados_apolice,
+    historico_sinistros,
+    extracao,
+    plataforma: str = "NAO_MENCIONADA",
 ) -> VeredictoCobertura:
     """
     Avalia elegibilidade e cobertura de um sinistro.
 
-    Parâmetros:
+    Args:
         tipo_sinistro     — string do enum BAML (ex: "DITA", "BAGAGEM")
         dados_apolice     — resultado de tools.consultar_apolice()
         historico_sinistros — resultado de tools.buscar_historico_sinistros()
         extracao          — ExtracaoSinistro do BAML
-        plataforma        — "UBER" por padrão (88i é Last Mile / Uber)
+        plataforma        — valor do enum Plataforma do BAML
+                           (ex: "UBER", "NOVENTA_E_NOVE", "NAO_MENCIONADA")
+                           Default: "NAO_MENCIONADA" → aplica regime PADRAO
 
     Retorna VeredictoCobertura com decisão final e docs obrigatórios.
     """
+    regime = resolver_regime(plataforma)
     regras_ok: list[str] = []
     obs: list[str] = []
+    obs.append(f"plataforma={plataforma} → regime={regime}")
 
     # ----------------------------------------------------------
     # D1: Apólice vigente
@@ -175,12 +180,12 @@ def avaliar_cobertura(
             observacoes=obs,
         )
 
-    # Busca cobertura na tabela
+    # Busca cobertura na tabela pelo regime
     cobertura_match = None
     for row in TIPO_SINISTRO_COBERTURA:
         if row["tipo_sinistro"] == tipo_sinistro:
-            plat_ok = row.get("plataforma") is None or row.get("plataforma") == plataforma
-            if plat_ok:
+            row_regime = row.get("regime")
+            if row_regime is None or row_regime == regime:
                 # Linha de recusa explícita
                 if row.get("elegivel") is False:
                     obs.append(f"D7/D8: {row['motivo_recusa']}")
@@ -210,14 +215,13 @@ def avaliar_cobertura(
     produto = cobertura_match["produto"]
     obs.append(f"D8: cobertura {cobertura} mapeada ✓")
 
-    # ----------------------------------------------------------
-    # D6: Tipo de veículo (Produto A = somente automóvel)
-    # ----------------------------------------------------------
-    if produto == "A":
+    # D6: Tipo de veículo (somente automóvel para Produto A/Uber)
+    # ATENÇÃO: D6 NÃO se aplica no regime PADRAO (CG geral não restringe tipo de veículo)
+    if produto == "A" and regime == "UBER":
         regras_ok.append("D6")
         veiculo_tipo = _veiculo_tipo(extracao)
         if veiculo_tipo and veiculo_tipo not in ("CARRO", "NAO_MENCIONADO"):
-            obs.append(f"D6: veículo tipo {veiculo_tipo} — Produto A cobre somente automóveis")
+            obs.append(f"D6: veículo tipo {veiculo_tipo} — Produto A/Uber cobre somente automóveis")
             return VeredictoCobertura(
                 elegivel=False,
                 status="rejected",
@@ -230,6 +234,8 @@ def avaliar_cobertura(
                 observacoes=obs,
             )
         obs.append(f"D6: tipo de veículo ok ({veiculo_tipo}) ✓")
+    elif produto == "A" and regime == "PADRAO":
+        obs.append("D6: não aplicável no regime PADRAO (CG geral aceita qualquer veículo)")
 
     # ----------------------------------------------------------
     # D15: CNH ativa mencionada nos documentos
@@ -242,12 +248,17 @@ def avaliar_cobertura(
             obs.append("D15: CNH não mencionada — marcar como pendência documental")
             # Não recusa — vira pendência (pode estar com o segurado)
 
-    # ----------------------------------------------------------
     # D4: Cooldown
-    # ----------------------------------------------------------
     if produto in ("A", "B") and historico_sinistros and historico_sinistros.encontrado:
         regras_ok.append("D4")
-        cooldown = PARAMETROS_COBERTURA.get(cobertura, {}).get("cooldown_dias")
+        params = PARAMETROS_COBERTURA.get(cobertura, {})
+        # DITA Uber: 30 dias | DITA padrão: 90 dias | demais: usar cooldown_dias
+        if cobertura == "B_DITA" and regime == "UBER":
+            cooldown = params.get("cooldown_dias", 30)
+        elif cobertura == "B_DITA":
+            cooldown = params.get("cooldown_dias_padrao", 90)
+        else:
+            cooldown = params.get("cooldown_dias")
         if cooldown:
             dias = _dias_desde(historico_sinistros.ultimo_sinistro_data)
             if dias is not None and dias < cooldown:
