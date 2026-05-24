@@ -24,8 +24,6 @@ RUN python -c "from baml_client.sync_client import b; print('baml_client ok')"
 # Verifica que o agente importa corretamente
 RUN python -c "from agent import processar_narrativa; print('agent ok')"
 
-# Porta padrão (Railway injeta PORT via env)
-ENV PORT=8000
-EXPOSE 8000
-
+# Porta dinâmica (Railway injeta PORT via env)
+# Não hardcodar EXPOSE — Railway injeta PORT em tempo de run
 CMD ["python", "main.py"]
