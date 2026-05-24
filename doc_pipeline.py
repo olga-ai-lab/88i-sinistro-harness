@@ -30,6 +30,7 @@ from dotenv import load_dotenv
 load_dotenv()
 
 import anthropic
+from doc_validators import validar_documento, sinais_para_contexto
 
 
 # ============================================================
@@ -43,6 +44,7 @@ class DocumentoInput:
     conteudo: str                      # texto extraído OU descrição para mock
     mime_type: str = "text/plain"      # em produção: image/jpeg, application/pdf, etc.
     ordem: int = 0
+    dados_binarios: bytes = field(default_factory=bytes)  # bytes reais do arquivo
 
 
 @dataclass
@@ -97,6 +99,7 @@ class AnaliseDocumento:
     documento: DocumentoInput
     classificacao: Optional[ResultadoClassificacao] = None
     forensics: Optional[ResultadoForensics] = None
+    validacao_deterministica: Optional[object] = None  # ResultadoValidacao
     erro: Optional[str] = None
 
 
@@ -390,6 +393,18 @@ def analisar_documentos(
     for doc in documentos:
         analise = AnaliseDocumento(documento=doc)
         try:
+            # --- Camada 0: validação determinística (ZERO LLM) ---
+            val = validar_documento(
+                dados=doc.dados_binarios or doc.conteudo.encode("utf-8"),
+                nome_arquivo=doc.nome,
+                mime_type=doc.mime_type,
+                texto_extraido=doc.conteudo,
+            )
+            analise.validacao_deterministica = val
+
+            # Se sinal crítico/alto de adulteração → injeta no contexto do forensics
+            sinais_ctx = sinais_para_contexto(val)
+
             # Etapa 1: classificação
             clf = _classificar(doc)
             analise.classificacao = clf
@@ -399,8 +414,14 @@ def analisar_documentos(
                 analises.append(analise)
                 continue
 
-            # Etapa 2: forensics com contexto acumulado
-            ctx = "\n".join(contexto_acumulado_parts) if contexto_acumulado_parts else ""
+            # Etapa 2: forensics com contexto acumulado + sinais determinísticos
+            ctx_parts = []
+            if contexto_acumulado_parts:
+                ctx_parts.append("\n".join(contexto_acumulado_parts))
+            if sinais_ctx:
+                ctx_parts.append(sinais_ctx)
+            ctx = "\n\n".join(ctx_parts)
+
             fns = _analisar_forensics(doc, clf, outros_docs_context=ctx)
             analise.forensics = fns
 
