@@ -244,9 +244,7 @@ desenvolvimento. Deploy Railway usa 3.12 via Docker.
 - Comandos destrutivos: confirmar antes
 - Commits: **Conventional Commits em inglês**
 - Comunicação: **português brasileiro, direto, sem bajulação**
-- **Fernanda mantém governança dos commits** (rodados no terminal local dela).
-  Claude cria arquivos e testes no sandbox, mostra comando de commit pronto,
-  Fernanda cola o output de volta.
+- **Commits feitos diretamente pelo Claude** no terminal local, seguindo Conventional Commits em inglês.
 - Regressão em `test_narrativas.py` (3/3) → parar e reportar antes de
   qualquer outra coisa
 
