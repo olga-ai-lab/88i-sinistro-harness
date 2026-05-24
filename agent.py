@@ -22,6 +22,7 @@ from baml_client.types import ExtracaoSinistro
 from observability import observe
 from tools import consultar_apolice, buscar_historico_sinistros, registrar_sinistro
 from tools import DadosApolice, HistoricoSinistros
+from rules_engine import avaliar_cobertura, VeredictoCobertura
 
 
 # ============================================================
@@ -44,6 +45,9 @@ class SinistroState(TypedDict):
     # Contexto enriquecido pelas tools (Semana 2)
     dados_apolice: Optional[DadosApolice]
     historico_sinistros: Optional[HistoricoSinistros]
+
+    # Veredicto de cobertura (Semana 3)
+    veredicto_cobertura: Optional[VeredictoCobertura]
 
     # Decisão de roteamento
     proxima_acao: Optional[Literal[
@@ -240,18 +244,30 @@ def no_solicitar_esclarecimento(state: SinistroState) -> dict:
 def no_pronto_para_analise(state: SinistroState) -> dict:
     """
     Caminho feliz: narrativa extraída com confiança, sem red flags.
+    Semana 3: chama rules engine para decidir elegibilidade/cobertura.
     Semana 2: registra o sinistro via tool e retorna protocolo ao segurado.
     Em produção: aciona a próxima Activity Inngest (Cobertura + Docs + Fraude).
     """
     log = state.get("log_execucao", [])
     extracao = state["extracao"]
-
-    bloqueantes = [c for c in extracao.campos_faltantes if c.criticidade == "bloqueante"]
     tipo_label = extracao.tipo_sinistro.value if hasattr(extracao.tipo_sinistro, "value") else str(extracao.tipo_sinistro)
 
     log.append(
         f"PRONTO PARA ANÁLISE — tipo={extracao.tipo_sinistro} "
         f"urgência={extracao.urgencia}"
+    )
+
+    # --- Semana 3: avaliação de cobertura ---
+    veredicto = avaliar_cobertura(
+        tipo_sinistro=tipo_label,
+        dados_apolice=state.get("dados_apolice"),
+        historico_sinistros=state.get("historico_sinistros"),
+        extracao=extracao,
+        plataforma="UBER",
+    )
+    log.append(
+        f"cobertura: status={veredicto.status} cobertura={veredicto.cobertura} "
+        f"docs_pendentes={len(veredicto.docs_pendentes)}"
     )
 
     # Registra sinistro e gera protocolo
@@ -267,26 +283,36 @@ def no_pronto_para_analise(state: SinistroState) -> dict:
     protocolo_txt = f"\nProtocolo: {registro.protocolo}" if registro.sucesso else ""
     log.append(f"registro: sucesso={registro.sucesso} protocolo={registro.protocolo}")
 
-    if bloqueantes:
-        log.append(
-            f"PENDÊNCIAS DOCUMENTAIS registradas: "
-            f"{len(bloqueantes)} bloqueantes para análise posterior"
+    # Monta mensagem ao segurado baseada no veredicto
+    if not veredicto.elegivel:
+        mensagem = (
+            f"Analisamos sua comunicação de sinistro.{protocolo_txt}\n"
+            f"Infelizmente, identificamos que o evento não está coberto pela sua apólice.\n"
+            f"Motivo: {veredicto.motivo_recusa}\n"
+            f"Entre em contato com a 88i: 0800 718 7813"
         )
+    elif veredicto.docs_pendentes:
+        pendencias_txt = "\n".join(f"  • {d}" for d in veredicto.docs_pendentes[:5])
         mensagem = (
             f"Sinistro registrado.{protocolo_txt}\n"
-            f"Tipo identificado: {tipo_label}\n"
-            f"Em breve solicitaremos os documentos necessários para "
-            f"prosseguir com a análise."
+            f"Cobertura identificada: {veredicto.descricao_cobertura or veredicto.cobertura}\n"
+            f"Para prosseguir, precisamos dos seguintes documentos:\n{pendencias_txt}"
         )
     else:
         mensagem = (
             f"Sinistro registrado.{protocolo_txt}\n"
-            f"Tipo identificado: {tipo_label}\n"
-            f"Vamos analisar sua documentação e retornamos em breve."
+            f"Cobertura: {veredicto.descricao_cobertura or veredicto.cobertura}\n"
+            f"Documentação completa. Vamos analisar e retornamos em breve."
         )
+
+    bloqueantes = [c for c in extracao.campos_faltantes if c.criticidade == "bloqueante"]
+    if bloqueantes:
+        log.append(f"PENDÊNCIAS DOCUMENTAIS: {len(bloqueantes)} bloqueantes para análise posterior")
+
     return {
         "mensagem_ao_segurado": mensagem,
         "protocolo": registro.protocolo,
+        "veredicto_cobertura": veredicto,
         "log_execucao": log,
     }
 
@@ -397,6 +423,7 @@ def processar_narrativa(narrativa: str, segurado_id: Optional[str] = None) -> Si
         "extracao": None,
         "dados_apolice": None,
         "historico_sinistros": None,
+        "veredicto_cobertura": None,
         "proxima_acao": None,
         "mensagem_ao_segurado": None,
         "alerta_operacional": None,
