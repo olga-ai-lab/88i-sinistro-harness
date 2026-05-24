@@ -5,6 +5,7 @@ python-dotenv==1.0.1
 # Semana 2 — HTTP server + observabilidade durável
 fastapi==0.115.12
 uvicorn[standard]==0.34.3
+python-multipart>=0.0.18
 inngest==0.5.18
 langfuse==2.59.3
 httpx==0.28.1
