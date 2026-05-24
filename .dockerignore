@@ -1,0 +1,35 @@
+# Exclui arquivos locais que não devem ir para o container Docker
+
+# Ambiente virtual Python
+.venv/
+venv/
+env/
+
+# Cache Python
+__pycache__/
+*.py[cod]
+*.so
+
+# Resultados de eval gerados localmente
+eval_results_*.json
+
+# Ambiente local
+.env
+.envcd
+
+# Git
+.git/
+.gitignore
+
+# IDEs
+.idea/
+.vscode/
+
+# macOS
+.DS_Store
+
+# ZIP do projeto antigo
+*.zip
+
+# Railway (não copiar config local)
+.railway/

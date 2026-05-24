@@ -1,6 +1,6 @@
 FROM python:3.12-slim
 
-# Dependências de sistema para Pillow e pdftotext
+# Dependências de sistema
 RUN apt-get update && apt-get install -y --no-install-recommends \
     build-essential \
     libpq-dev \
@@ -15,19 +15,17 @@ WORKDIR /app
 COPY requirements.txt .
 RUN pip install --no-cache-dir -r requirements.txt
 
-# Copia código
+# Copia código (baml_client já está commitado — não precisa gerar)
 COPY . .
 
-# Gera cliente BAML
-RUN baml-cli generate
+# Verifica que o baml_client está ok
+RUN python -c "from baml_client.sync_client import b; print('baml_client ok')"
 
-# Porta padrão Railway
+# Verifica que o agente importa corretamente
+RUN python -c "from agent import processar_narrativa; print('agent ok')"
+
+# Porta padrão (Railway injeta PORT via env)
 ENV PORT=8000
-
 EXPOSE 8000
-
-# Healthcheck
-HEALTHCHECK --interval=30s --timeout=10s --start-period=30s --retries=3 \
-  CMD python -c "import urllib.request; urllib.request.urlopen('http://localhost:${PORT}/health')"
 
 CMD ["python", "main.py"]
