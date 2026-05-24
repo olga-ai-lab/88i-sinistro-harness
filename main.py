@@ -33,6 +33,7 @@ from hitl_queue import (
     listar_tarefas, obter_tarefa, resolver_tarefa, resumo_fila,
     TarefaStatus, DecisaoHumana, TarefaHITL, ResultadoResolucao,
 )
+from shadow_mode import relatorio as shadow_relatorio, ShadowModeEnum, get_modo
 
 
 # ============================================================
@@ -165,23 +166,50 @@ async def health():
 
 
 @app.post("/sinistro", response_model=SinistroResponse, tags=["sinistro"])
-async def receber_sinistro(req: SinistroRequest):
+async def receber_sinistro(req: SinistroRequest, request: Request):
     """
-    Recebe narrativa livre de um segurado e executa o pipeline completo:
-    1. Extrai dados estruturados via BAML/Claude
-    2. Consulta apólice e histórico (tools)
-    3. Decide rota deterministicamente
-    4. Registra sinistro (stub Supabase) e retorna protocolo
+    Recebe narrativa livre de um segurado e executa o pipeline completo.
 
-    Em produção: chamado pelo Inngest event `sinistro/fnol.received`.
+    Header opcional X-Shadow-Mode:
+      - shadow  (default): novo agente roda em paralelo, resultado do OCTA é retornado
+      - canary:             X% dos sinistros usam o novo agente (CANARY_PERCENT env)
+      - cutover:            100% usam o novo agente
+
+    Header opcional X-Octa-Output (JSON): output do OCTA para comparação shadow.
+    Se ausente, o agente roda diretamente sem shadow.
     """
-    try:
-        resultado = processar_narrativa(
+    import json as _json
+
+    # Verifica se shadow mode está ativo via header ou env
+    shadow_header = request.headers.get("X-Shadow-Mode", "").lower()
+    octa_output_raw = request.headers.get("X-Octa-Output", "")
+
+    modo_ativo = shadow_header or get_modo()
+    tem_octa = bool(octa_output_raw)
+
+    # Se tiver output do OCTA e modo shadow/canary → usa shadow_mode
+    if tem_octa and modo_ativo in (ShadowModeEnum.SHADOW, ShadowModeEnum.CANARY):
+        from shadow_mode import processar_shadow
+        try:
+            output_octa = _json.loads(octa_output_raw)
+        except Exception:
+            output_octa = {"proxima_acao": octa_output_raw}
+
+        run = processar_shadow(
             narrativa=req.narrativa.strip(),
+            output_octa=output_octa,
             segurado_id=req.segurado_id,
         )
-    except Exception as e:
-        raise HTTPException(status_code=500, detail=f"Erro no pipeline: {e}")
+        resultado = run.output_retornado
+    else:
+        # Sem shadow ou cutover: roda diretamente
+        try:
+            resultado = processar_narrativa(
+                narrativa=req.narrativa.strip(),
+                segurado_id=req.segurado_id,
+            )
+        except Exception as e:
+            raise HTTPException(status_code=500, detail=f"Erro no pipeline: {e}")
 
     extracao = resultado.get("extracao")
 
@@ -413,6 +441,20 @@ async def hitl_resolver(tarefa_id: str, req: HITLResolverRequest):
         "mensagem_ao_segurado": resultado.mensagem_ao_segurado,
         "timestamp": datetime.now().isoformat(),
     }
+
+
+@app.get("/shadow/relatorio", tags=["shadow"])
+async def shadow_relatorio_endpoint():
+    """
+    Retorna métricas acumuladas do shadow mode.
+    Inclui taxa de concordância com o OCTA e flag pronto_para_cutover.
+
+    pronto_para_cutover = True quando:
+      - >= 100 sinistros processados
+      - taxa_concordancia >= 95%
+      - taxa_divergencia_critica <= 2%
+    """
+    return shadow_relatorio()
 
 
 # ============================================================
