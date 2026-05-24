@@ -23,6 +23,7 @@ from observability import observe
 from tools import consultar_apolice, buscar_historico_sinistros, registrar_sinistro
 from tools import DadosApolice, HistoricoSinistros
 from rules_engine import avaliar_cobertura, VeredictoCobertura
+from doc_pipeline import analisar_documentos, DocumentoInput, AnaliseDocumental
 
 
 # ============================================================
@@ -48,6 +49,10 @@ class SinistroState(TypedDict):
 
     # Veredicto de cobertura (Semana 3)
     veredicto_cobertura: Optional[VeredictoCobertura]
+
+    # Pipeline documental (Semana 4)
+    documentos_recebidos: Optional[list[DocumentoInput]]
+    analise_documental: Optional[AnaliseDocumental]
 
     # Decisão de roteamento
     proxima_acao: Optional[Literal[
@@ -171,6 +176,13 @@ def no_decidir_rota(state: SinistroState) -> dict:
     red_flags_altas = [rf for rf in extracao.red_flags if rf.severidade == "alta"]
     if red_flags_altas:
         log.append(f"roteamento: {len(red_flags_altas)} red_flag(s) alta → escalar_humano")
+        return {"proxima_acao": "escalar_humano", "log_execucao": log}
+
+    # Regra 1b: acumulação de red_flags media (>= 3) → humano
+    # Robustez contra não-determinismo do LLM na classificação alta vs media
+    red_flags_medias = [rf for rf in extracao.red_flags if rf.severidade == "media"]
+    if len(red_flags_medias) >= 3:
+        log.append(f"roteamento: {len(red_flags_medias)} red_flag(s) media → escalar_humano")
         return {"proxima_acao": "escalar_humano", "log_execucao": log}
 
     # Regra 2: vítima fatal → humano sempre (política da seguradora)
@@ -317,6 +329,61 @@ def no_pronto_para_analise(state: SinistroState) -> dict:
     }
 
 
+def no_analisar_documentos(state: SinistroState) -> dict:
+    """
+    Semana 4: executa o pipeline documental nos documentos recebidos.
+    Chama as 3 skills: classifier → forensics → adjudicator.
+
+    Só é chamado quando state["documentos_recebidos"] está preenchido.
+    Em produção: disparado por webhook quando segurado envia documentos via WhatsApp.
+
+    ZERO decisão de negócio aqui — adjudicator retorna decisão,
+    que pode promover o sinistro ou escalar para humano.
+    """
+    log = state.get("log_execucao", [])
+    docs = state.get("documentos_recebidos") or []
+
+    if not docs:
+        log.append("[docs] nenhum documento recebido — pulando análise documental")
+        return {"analise_documental": None, "log_execucao": log}
+
+    log.append(f"[docs] iniciando pipeline documental: {len(docs)} documento(s)")
+
+    extracao = state.get("extracao")
+    veredicto_cob = state.get("veredicto_cobertura")
+    tipo_label = (
+        extracao.tipo_sinistro.value
+        if extracao and hasattr(extracao.tipo_sinistro, "value")
+        else "INDEFINIDO"
+    )
+    cobertura_label = veredicto_cob.cobertura if veredicto_cob else "desconhecida"
+    protocolo = state.get("protocolo") or "sem-protocolo"
+
+    contexto = (
+        f"Protocolo: {protocolo}\n"
+        f"Tipo de sinistro: {tipo_label}\n"
+        f"Cobertura identificada: {cobertura_label}\n"
+        f"Narrativa original: {state['narrativa_original'][:300]}\n"
+        f"Plataforma: UBER\n"
+    )
+
+    try:
+        analise = analisar_documentos(docs, contexto_sinistro=contexto)
+        veredicto = analise.veredicto
+        log.append(
+            f"[docs] pipeline concluído: decision={veredicto.decision_status if veredicto else 'erro'} "
+            f"fraud_score={veredicto.fraud_score if veredicto else 0} "
+            f"human_review={analise.needs_human_review}"
+        )
+        if analise.resumo_fraude:
+            log.append(f"[docs] FRAUDE: {analise.resumo_fraude}")
+    except Exception as e:
+        log.append(f"[docs] ERRO no pipeline: {e}")
+        analise = None
+
+    return {"analise_documental": analise, "log_execucao": log}
+
+
 def no_escalar_humano(state: SinistroState) -> dict:
     """
     Casos sensíveis ou de baixa confiança vão para fila humana priorizada.
@@ -377,6 +444,7 @@ def construir_agente():
     workflow.add_node("decidir_rota", no_decidir_rota)
     workflow.add_node("solicitar_esclarecimento", no_solicitar_esclarecimento)
     workflow.add_node("pronto_para_analise", no_pronto_para_analise)
+    workflow.add_node("analisar_documentos", no_analisar_documentos)
     workflow.add_node("escalar_humano", no_escalar_humano)
 
     # Arestas lineares
@@ -397,7 +465,8 @@ def construir_agente():
 
     # Terminais
     workflow.add_edge("solicitar_esclarecimento", END)
-    workflow.add_edge("pronto_para_analise", END)
+    workflow.add_edge("pronto_para_analise", "analisar_documentos")
+    workflow.add_edge("analisar_documentos", END)
     workflow.add_edge("escalar_humano", END)
 
     return workflow.compile()
@@ -424,6 +493,8 @@ def processar_narrativa(narrativa: str, segurado_id: Optional[str] = None) -> Si
         "dados_apolice": None,
         "historico_sinistros": None,
         "veredicto_cobertura": None,
+        "documentos_recebidos": None,
+        "analise_documental": None,
         "proxima_acao": None,
         "mensagem_ao_segurado": None,
         "alerta_operacional": None,
