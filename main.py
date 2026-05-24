@@ -29,6 +29,10 @@ from pydantic import BaseModel, Field
 from agent import processar_narrativa
 from tools import _stub_mode
 from doc_pipeline import analisar_documentos, DocumentoInput, AnaliseDocumental
+from hitl_queue import (
+    listar_tarefas, obter_tarefa, resolver_tarefa, resumo_fila,
+    TarefaStatus, DecisaoHumana, TarefaHITL, ResultadoResolucao,
+)
 
 
 # ============================================================
@@ -85,6 +89,53 @@ class DocumentoAnaliseResponse(BaseModel):
     resumo_fraude: Optional[str] = None
     documentos_processados: list[dict]
     timestamp: str
+
+
+class HITLTarefaResponse(BaseModel):
+    id: str
+    protocolo: str
+    segurado_id: Optional[str]
+    motivo: str
+    prioridade: str
+    status: str
+    criada_em: str
+    tipo_sinistro: Optional[str]
+    plataforma: Optional[str]
+    cobertura: Optional[str]
+    red_flags: list[dict]
+    alerta_operacional: Optional[str]
+    fraud_score: int
+    fraud_findings: list[str]
+    veredicto_cobertura_status: Optional[str]
+    veredicto_motivo_recusa: Optional[str]
+    narrativa_original: str
+    resolvida_em: Optional[str] = None
+    analista: Optional[str] = None
+    decisao: Optional[str] = None
+    justificativa: Optional[str] = None
+    docs_solicitados: list[str] = []
+
+
+class HITLResolverRequest(BaseModel):
+    decisao: str = Field(
+        ...,
+        description="aprovar | recusar | solicitar_docs | escalar_juridico",
+    )
+    analista: str = Field(..., description="Nome ou ID da analista (ex: 'Rosi')")
+    justificativa: str = Field(default="", description="Justificativa da decisão")
+    docs_solicitados: list[str] = Field(
+        default=[],
+        description="Lista de documentos a solicitar (quando decisao=solicitar_docs)",
+    )
+
+
+class HITLFilaResponse(BaseModel):
+    total: int
+    pendentes: int
+    em_revisao: int
+    resolvidas: int
+    por_prioridade: dict
+    tarefas: list[HITLTarefaResponse]
 
 
 class HealthResponse(BaseModel):
@@ -229,6 +280,139 @@ async def receber_documentos(
         documentos_processados=docs_processados,
         timestamp=datetime.now().isoformat(),
     )
+
+
+@app.get("/hitl/fila", response_model=HITLFilaResponse, tags=["hitl"])
+async def hitl_fila(
+    status: str = TarefaStatus.PENDENTE,
+    limit: int = 50,
+):
+    """
+    Lista a fila de revisão humana para a Rosi.
+    Ordenada por prioridade (critica → alta → media → baixa) e data.
+
+    status: pendente | em_revisao | resolvida (default: pendente)
+    """
+    resumo = resumo_fila()
+    tarefas = listar_tarefas(status=status, limit=limit)
+
+    def _tarefa_to_resp(t: TarefaHITL) -> HITLTarefaResponse:
+        return HITLTarefaResponse(
+            id=t.id,
+            protocolo=t.protocolo,
+            segurado_id=t.segurado_id,
+            motivo=t.motivo,
+            prioridade=t.prioridade,
+            status=t.status,
+            criada_em=t.criada_em,
+            tipo_sinistro=t.tipo_sinistro,
+            plataforma=t.plataforma,
+            cobertura=t.cobertura,
+            red_flags=t.red_flags,
+            alerta_operacional=t.alerta_operacional,
+            fraud_score=t.fraud_score,
+            fraud_findings=t.fraud_findings,
+            veredicto_cobertura_status=t.veredicto_cobertura_status,
+            veredicto_motivo_recusa=t.veredicto_motivo_recusa,
+            narrativa_original=t.narrativa_original,
+            resolvida_em=t.resolvida_em,
+            analista=t.analista,
+            decisao=t.decisao,
+            justificativa=t.justificativa,
+            docs_solicitados=t.docs_solicitados,
+        )
+
+    return HITLFilaResponse(
+        total=resumo["total"],
+        pendentes=resumo["pendentes"],
+        em_revisao=resumo["em_revisao"],
+        resolvidas=resumo["resolvidas"],
+        por_prioridade=resumo["por_prioridade"],
+        tarefas=[_tarefa_to_resp(t) for t in tarefas],
+    )
+
+
+@app.get("/hitl/tarefa/{tarefa_id}", response_model=HITLTarefaResponse, tags=["hitl"])
+async def hitl_tarefa_detalhe(tarefa_id: str):
+    """
+    Retorna o detalhe completo de uma tarefa — narrativa, red flags,
+    fraud findings, veredicto de cobertura — tudo que a Rosi precisa
+    para tomar a decisão.
+    """
+    tarefa = obter_tarefa(tarefa_id)
+    if not tarefa:
+        raise HTTPException(status_code=404, detail=f"Tarefa {tarefa_id} não encontrada")
+    return HITLTarefaResponse(
+        id=tarefa.id,
+        protocolo=tarefa.protocolo,
+        segurado_id=tarefa.segurado_id,
+        motivo=tarefa.motivo,
+        prioridade=tarefa.prioridade,
+        status=tarefa.status,
+        criada_em=tarefa.criada_em,
+        tipo_sinistro=tarefa.tipo_sinistro,
+        plataforma=tarefa.plataforma,
+        cobertura=tarefa.cobertura,
+        red_flags=tarefa.red_flags,
+        alerta_operacional=tarefa.alerta_operacional,
+        fraud_score=tarefa.fraud_score,
+        fraud_findings=tarefa.fraud_findings,
+        veredicto_cobertura_status=tarefa.veredicto_cobertura_status,
+        veredicto_motivo_recusa=tarefa.veredicto_motivo_recusa,
+        narrativa_original=tarefa.narrativa_original,
+        resolvida_em=tarefa.resolvida_em,
+        analista=tarefa.analista,
+        decisao=tarefa.decisao,
+        justificativa=tarefa.justificativa,
+        docs_solicitados=tarefa.docs_solicitados,
+    )
+
+
+@app.post("/hitl/tarefa/{tarefa_id}/resolver", tags=["hitl"])
+async def hitl_resolver(tarefa_id: str, req: HITLResolverRequest):
+    """
+    Rosi submete sua decisão sobre uma tarefa.
+
+    decisao:
+      - aprovar          → sinistro aprovado, mensagem positiva ao segurado
+      - recusar          → sinistro recusado com justificativa
+      - solicitar_docs   → solicita documentos adicionais (informar docs_solicitados)
+      - escalar_juridico → encaminha para equipe jurídica
+
+    Registra: analista, decisao, justificativa, timestamp.
+    Retorna mensagem pronta para enviar ao segurado via WhatsApp.
+    """
+    decisoes_validas = {
+        DecisaoHumana.APROVAR,
+        DecisaoHumana.RECUSAR,
+        DecisaoHumana.SOLICITAR_DOCS,
+        DecisaoHumana.ESCALAR_JURIDICO,
+    }
+    if req.decisao not in decisoes_validas:
+        raise HTTPException(
+            status_code=400,
+            detail=f"Decisão inválida: {req.decisao}. Valores aceitos: {decisoes_validas}",
+        )
+
+    resultado = resolver_tarefa(
+        tarefa_id=tarefa_id,
+        decisao=req.decisao,
+        analista=req.analista,
+        justificativa=req.justificativa,
+        docs_solicitados=req.docs_solicitados,
+    )
+
+    if not resultado.sucesso:
+        raise HTTPException(status_code=400, detail=resultado.erro)
+
+    return {
+        "sucesso": True,
+        "tarefa_id": tarefa_id,
+        "decisao": resultado.decisao,
+        "analista": req.analista,
+        "mensagem_ao_segurado": resultado.mensagem_ao_segurado,
+        "timestamp": datetime.now().isoformat(),
+    }
 
 
 # ============================================================

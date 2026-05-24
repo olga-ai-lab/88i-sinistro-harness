@@ -24,6 +24,7 @@ from tools import consultar_apolice, buscar_historico_sinistros, registrar_sinis
 from tools import DadosApolice, HistoricoSinistros
 from rules_engine import avaliar_cobertura, VeredictoCobertura
 from doc_pipeline import analisar_documentos, DocumentoInput, AnaliseDocumental
+from hitl_queue import criar_tarefa
 
 
 # ============================================================
@@ -53,6 +54,9 @@ class SinistroState(TypedDict):
     # Pipeline documental (Semana 4)
     documentos_recebidos: Optional[list[DocumentoInput]]
     analise_documental: Optional[AnaliseDocumental]
+
+    # HITL (Semana 5)
+    hitl_tarefa_id: Optional[str]
 
     # Decisão de roteamento
     proxima_acao: Optional[Literal[
@@ -399,6 +403,7 @@ def no_analisar_documentos(state: SinistroState) -> dict:
 def no_escalar_humano(state: SinistroState) -> dict:
     """
     Casos sensíveis ou de baixa confiança vão para fila humana priorizada.
+    Semana 5: cria tarefa na fila HITL para a Rosi.
     Em produção: cria card no painel da Rosi/time.
     """
     log = state.get("log_execucao", [])
@@ -417,6 +422,14 @@ def no_escalar_humano(state: SinistroState) -> dict:
     alerta = f"ESCALAR: {' | '.join(motivos) if motivos else 'análise manual requerida'}"
     log.append(alerta)
 
+    # Cria tarefa na fila HITL (fail-open: não bloqueia se falhar)
+    tarefa = criar_tarefa(dict(state))
+    tarefa_id = tarefa.id if tarefa else None
+    if tarefa_id:
+        log.append(f"[hitl] tarefa criada: {tarefa_id} prioridade={tarefa.prioridade}")
+    else:
+        log.append("[hitl] falha ao criar tarefa — continuando sem HITL")
+
     mensagem = (
         "Recebemos sua comunicação de sinistro. Dada a natureza do caso, "
         "um especialista da 88i vai entrar em contato em breve."
@@ -424,6 +437,7 @@ def no_escalar_humano(state: SinistroState) -> dict:
     return {
         "mensagem_ao_segurado": mensagem,
         "alerta_operacional": alerta,
+        "hitl_tarefa_id": tarefa_id,
         "log_execucao": log,
     }
 
@@ -507,6 +521,7 @@ def processar_narrativa(narrativa: str, segurado_id: Optional[str] = None) -> Si
         "veredicto_cobertura": None,
         "documentos_recebidos": None,
         "analise_documental": None,
+        "hitl_tarefa_id": None,
         "proxima_acao": None,
         "mensagem_ao_segurado": None,
         "alerta_operacional": None,
