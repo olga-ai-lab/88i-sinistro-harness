@@ -28,7 +28,7 @@ from fastapi import FastAPI, HTTPException, Request, UploadFile, File
 from fastapi.responses import JSONResponse
 from pydantic import BaseModel, Field
 
-from agent import processar_narrativa
+from agent import processar_narrativa  # agent.py not agent/__init__.py
 from tools import _stub_mode
 from doc_pipeline import analisar_documentos, DocumentoInput, AnaliseDocumental
 from hitl_queue import (
