@@ -158,15 +158,11 @@ Healthcheck operacional do serviço.
 - [ ] Logs com protocolo e correlation id.
 - [ ] Variáveis de ambiente de produção configuradas.
 
-
-
 ## 8) Artefatos prontos no repositório
 
 - `docs/olga/system_prompt.md`
 - `docs/olga/output_schema.json`
 - `docs/olga/http_contracts.md`
-
-
 
 ## 9) Início imediato (executável)
 
@@ -179,8 +175,6 @@ python olga_bootstrap.py docs --protocolo 88i-2026-00000001 --file /caminho/bo.p
 ```
 
 Objetivo: permitir validação fim-a-fim do contrato HTTP antes de plugar no runtime Hermes.
-
-
 
 ## 10) Cópia completa do Hermes (execução)
 
