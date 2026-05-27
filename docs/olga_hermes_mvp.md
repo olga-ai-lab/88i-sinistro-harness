@@ -165,3 +165,17 @@ Healthcheck operacional do serviço.
 - `docs/olga/system_prompt.md`
 - `docs/olga/output_schema.json`
 - `docs/olga/http_contracts.md`
+
+
+
+## 9) Início imediato (executável)
+
+Este repositório agora inclui `olga_bootstrap.py`, um cliente CLI para iniciar integração real com os endpoints:
+
+```bash
+python olga_bootstrap.py health
+python olga_bootstrap.py fnol --narrativa "Bati minha moto ontem" --segurado-id SEG-001
+python olga_bootstrap.py docs --protocolo 88i-2026-00000001 --file /caminho/bo.pdf
+```
+
+Objetivo: permitir validação fim-a-fim do contrato HTTP antes de plugar no runtime Hermes.
