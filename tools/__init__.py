@@ -22,4 +22,26 @@ def check_file_requirements():
     return check_terminal_requirements()
 
 
+# Import 88i custom tools to trigger registry.register() calls
+try:
+    from tools import _88i_sinistro_tools
+except ImportError:
+    pass
+
+try:
+    from tools import _88i_supabase_tool
+except ImportError:
+    pass
+
+try:
+    from tools import _88i_inngest_tool
+except ImportError:
+    pass
+
+try:
+    from tools import _88i_langraph_tool
+except ImportError:
+    pass
+
+
 __all__ = ["check_file_requirements"]
