@@ -238,6 +238,8 @@ markers = [
     "real_concurrent_gate: opt out of the autouse stub that disables _detect_concurrent_hermes_instances",
     "security: marks security audit and vulnerability tests",
     "performance: marks performance benchmarking tests",
+    "e2e: marks end-to-end workflow tests",
+    "chaos: marks chaos engineering and failure scenario tests",
 ]
 # pytest-timeout: per-test 30s hard cap with signal method.
 # This is the fallback inside each per-file pytest subprocess (see
