@@ -16,8 +16,10 @@ Rodar local:
 from __future__ import annotations
 
 import os
+import logging
 from datetime import datetime
 from typing import Optional
+from contextlib import asynccontextmanager
 
 from dotenv import load_dotenv
 load_dotenv()
@@ -34,6 +36,50 @@ from hitl_queue import (
     TarefaStatus, DecisaoHumana, TarefaHITL, ResultadoResolucao,
 )
 from shadow_mode import relatorio as shadow_relatorio, ShadowModeEnum, get_modo
+from app.health import router as health_router
+from app.shutdown import graceful_shutdown
+
+# Configure logging
+logger = logging.getLogger(__name__)
+
+
+# ============================================================
+# Cleanup callbacks
+# ============================================================
+
+async def cleanup_database() -> None:
+    """Cleanup database connections."""
+    logger.info("Cleaning up database connections...")
+    # Add database cleanup logic here
+    pass
+
+
+async def cleanup_cache() -> None:
+    """Cleanup cache."""
+    logger.info("Cleaning up cache...")
+    # Add cache cleanup logic here
+    pass
+
+
+# ============================================================
+# App lifespan
+# ============================================================
+
+@asynccontextmanager
+async def lifespan(app: FastAPI):
+    """Manage app lifecycle."""
+    # Startup
+    logger.info("🚀 Application starting...")
+    graceful_shutdown.setup_signal_handlers(app)
+    
+    # Add cleanup callbacks
+    graceful_shutdown.add_cleanup_callback(cleanup_database)
+    graceful_shutdown.add_cleanup_callback(cleanup_cache)
+    
+    yield
+    
+    # Shutdown
+    await graceful_shutdown.shutdown()
 
 
 # ============================================================
@@ -44,7 +90,11 @@ app = FastAPI(
     title="88i Sinistro Agent",
     description="Agente de ingestão de sinistros FNOL — 88i Seguradora Digital",
     version="0.2.0",  # Semana 2
+    lifespan=lifespan,
 )
+
+# Include health router
+app.include_router(health_router)
 
 
 # ============================================================
@@ -139,31 +189,9 @@ class HITLFilaResponse(BaseModel):
     tarefas: list[HITLTarefaResponse]
 
 
-class HealthResponse(BaseModel):
-    status: str
-    version: str
-    stub_mode: bool
-    timestamp: str
-
-
 # ============================================================
 # Endpoints
 # ============================================================
-
-@app.get("/health", response_model=HealthResponse, tags=["infra"])
-async def health():
-    """
-    Healthcheck para Railway, Render, ou qualquer uptime monitor.
-    Retorna 200 se o servidor está rodando.
-    `stub_mode: true` indica que Supabase não está configurado.
-    """
-    return HealthResponse(
-        status="ok",
-        version="0.2.0",
-        stub_mode=_stub_mode(),
-        timestamp=datetime.now().isoformat(),
-    )
-
 
 @app.post("/sinistro", response_model=SinistroResponse, tags=["sinistro"])
 async def receber_sinistro(req: SinistroRequest, request: Request):
