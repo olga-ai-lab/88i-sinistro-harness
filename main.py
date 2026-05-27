@@ -38,6 +38,8 @@ from hitl_queue import (
 from shadow_mode import relatorio as shadow_relatorio, ShadowModeEnum, get_modo
 from app.health import router as health_router
 from app.shutdown import graceful_shutdown
+from app import monitoring, metrics
+from app.middleware import RequestLoggingMiddleware
 
 # Configure logging
 logger = logging.getLogger(__name__)
@@ -70,6 +72,8 @@ async def lifespan(app: FastAPI):
     """Manage app lifecycle."""
     # Startup
     logger.info("🚀 Application starting...")
+    monitoring.setup_logging()
+    monitoring.log_deployment_info()
     graceful_shutdown.setup_signal_handlers(app)
     
     # Add cleanup callbacks
@@ -92,6 +96,9 @@ app = FastAPI(
     version="0.2.0",  # Semana 2
     lifespan=lifespan,
 )
+
+# Add request logging middleware
+app.add_middleware(RequestLoggingMiddleware)
 
 # Include health router
 app.include_router(health_router)
