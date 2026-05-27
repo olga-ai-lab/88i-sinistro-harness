@@ -1,0 +1,515 @@
+{
+  "dashboard": {
+    "title": "88i Sinistro - Launch Day Monitoring",
+    "tags": ["launch-day", "production", "monitoring", "sinistro"],
+    "timezone": "UTC",
+    "schemaVersion": 16,
+    "version": 1,
+    "panels": [
+      {
+        "id": 1,
+        "title": "Request Rate (req/sec)",
+        "type": "graph",
+        "gridPos": {
+          "h": 8,
+          "w": 12,
+          "x": 0,
+          "y": 0
+        },
+        "targets": [
+          {
+            "expr": "rate(sinistro_http_requests_total[1m])",
+            "legendFormat": "{{method}} {{path}}",
+            "refId": "A"
+          }
+        ],
+        "yaxes": [
+          {
+            "format": "reqps",
+            "label": "Requests/sec",
+            "show": true
+          },
+          {
+            "format": "short",
+            "show": false
+          }
+        ],
+        "thresholds": [
+          {
+            "value": 50,
+            "color": "yellow",
+            "op": "gt",
+            "fill": true,
+            "line": true,
+            "yaxis": "left",
+            "alias": "Alert Threshold (50 req/sec)"
+          },
+          {
+            "value": 100,
+            "color": "red",
+            "op": "gt",
+            "fill": true,
+            "line": true,
+            "yaxis": "left",
+            "alias": "Critical Threshold (100 req/sec)"
+          }
+        ],
+        "alert": {
+          "conditions": [
+            {
+              "evaluator": {
+                "params": [50],
+                "type": "gt"
+              },
+              "operator": {
+                "type": "and"
+              },
+              "query": {
+                "params": ["A", "5m", "now"]
+              },
+              "reducer": {
+                "params": [],
+                "type": "avg"
+              },
+              "type": "query"
+            }
+          ],
+          "executionErrorState": "alerting",
+          "frequency": "1m",
+          "handler": 1,
+          "name": "Request Rate High",
+          "noDataState": "no_data",
+          "notificationUid": "slack"
+        },
+        "refreshInterval": "15s",
+        "description": "HTTP request rate per second. Alert (yellow) at 50 req/sec, critical (red) at 100 req/sec. Normal launch ramp-up: 1-20 req/sec."
+      },
+      {
+        "id": 2,
+        "title": "Error Rate (%)",
+        "type": "graph",
+        "gridPos": {
+          "h": 8,
+          "w": 12,
+          "x": 12,
+          "y": 0
+        },
+        "targets": [
+          {
+            "expr": "rate(sinistro_http_errors_total[1m]) / rate(sinistro_http_requests_total[1m]) * 100",
+            "legendFormat": "Error Rate",
+            "refId": "A"
+          }
+        ],
+        "yaxes": [
+          {
+            "format": "percent",
+            "label": "Error Rate (%)",
+            "show": true
+          },
+          {
+            "format": "short",
+            "show": false
+          }
+        ],
+        "thresholds": [
+          {
+            "value": 1,
+            "color": "yellow",
+            "op": "gt",
+            "fill": true,
+            "line": true,
+            "yaxis": "left",
+            "alias": "Alert Threshold (1%)"
+          },
+          {
+            "value": 5,
+            "color": "red",
+            "op": "gt",
+            "fill": true,
+            "line": true,
+            "yaxis": "left",
+            "alias": "Critical Threshold (5%)"
+          }
+        ],
+        "alert": {
+          "conditions": [
+            {
+              "evaluator": {
+                "params": [1],
+                "type": "gt"
+              },
+              "operator": {
+                "type": "and"
+              },
+              "query": {
+                "params": ["A", "5m", "now"]
+              },
+              "reducer": {
+                "params": [],
+                "type": "avg"
+              },
+              "type": "query"
+            }
+          ],
+          "executionErrorState": "alerting",
+          "frequency": "1m",
+          "handler": 1,
+          "name": "Error Rate High",
+          "noDataState": "no_data",
+          "notificationUid": "slack,pagerduty"
+        },
+        "refreshInterval": "15s",
+        "description": "Percentage of requests resulting in errors. Alert (yellow) at 1%, critical (red) at 5%. Target: <1% sustained."
+      },
+      {
+        "id": 3,
+        "title": "P95 Latency (ms)",
+        "type": "graph",
+        "gridPos": {
+          "h": 8,
+          "w": 12,
+          "x": 0,
+          "y": 8
+        },
+        "targets": [
+          {
+            "expr": "histogram_quantile(0.95, rate(sinistro_http_duration_ms_bucket[1m]))",
+            "legendFormat": "P95 Latency",
+            "refId": "A"
+          }
+        ],
+        "yaxes": [
+          {
+            "format": "ms",
+            "label": "Latency (ms)",
+            "show": true
+          },
+          {
+            "format": "short",
+            "show": false
+          }
+        ],
+        "thresholds": [
+          {
+            "value": 300,
+            "color": "yellow",
+            "op": "gt",
+            "fill": true,
+            "line": true,
+            "yaxis": "left",
+            "alias": "Alert Threshold (300ms)"
+          },
+          {
+            "value": 500,
+            "color": "red",
+            "op": "gt",
+            "fill": true,
+            "line": true,
+            "yaxis": "left",
+            "alias": "Critical Threshold (500ms)"
+          }
+        ],
+        "alert": {
+          "conditions": [
+            {
+              "evaluator": {
+                "params": [300],
+                "type": "gt"
+              },
+              "operator": {
+                "type": "and"
+              },
+              "query": {
+                "params": ["A", "5m", "now"]
+              },
+              "reducer": {
+                "params": [],
+                "type": "avg"
+              },
+              "type": "query"
+            }
+          ],
+          "executionErrorState": "alerting",
+          "frequency": "1m",
+          "handler": 1,
+          "name": "P95 Latency High",
+          "noDataState": "no_data",
+          "notificationUid": "slack"
+        },
+        "refreshInterval": "15s",
+        "description": "95th percentile response latency. Alert (yellow) at 300ms, critical (red) at 500ms. Target: <200ms for extract, <600ms for fraud detection."
+      },
+      {
+        "id": 4,
+        "title": "CPU Usage (%)",
+        "type": "graph",
+        "gridPos": {
+          "h": 8,
+          "w": 12,
+          "x": 12,
+          "y": 8
+        },
+        "targets": [
+          {
+            "expr": "rate(sinistro_cpu_seconds_total[1m]) * 100",
+            "legendFormat": "{{instance}}",
+            "refId": "A"
+          }
+        ],
+        "yaxes": [
+          {
+            "format": "percent",
+            "label": "CPU Usage (%)",
+            "min": 0,
+            "max": 100,
+            "show": true
+          },
+          {
+            "format": "short",
+            "show": false
+          }
+        ],
+        "thresholds": [
+          {
+            "value": 70,
+            "color": "yellow",
+            "op": "gt",
+            "fill": true,
+            "line": true,
+            "yaxis": "left",
+            "alias": "Alert Threshold (70%)"
+          },
+          {
+            "value": 85,
+            "color": "red",
+            "op": "gt",
+            "fill": true,
+            "line": true,
+            "yaxis": "left",
+            "alias": "Critical Threshold (85%)"
+          }
+        ],
+        "alert": {
+          "conditions": [
+            {
+              "evaluator": {
+                "params": [70],
+                "type": "gt"
+              },
+              "operator": {
+                "type": "and"
+              },
+              "query": {
+                "params": ["A", "5m", "now"]
+              },
+              "reducer": {
+                "params": [],
+                "type": "avg"
+              },
+              "type": "query"
+            }
+          ],
+          "executionErrorState": "alerting",
+          "frequency": "1m",
+          "handler": 1,
+          "name": "CPU Usage High",
+          "noDataState": "no_data",
+          "notificationUid": "slack,pagerduty"
+        },
+        "refreshInterval": "15s",
+        "description": "CPU usage across production instances. Alert (yellow) at 70%, critical (red) at 85%. Target: <50% during normal operations."
+      },
+      {
+        "id": 5,
+        "title": "Memory Usage (%)",
+        "type": "graph",
+        "gridPos": {
+          "h": 8,
+          "w": 12,
+          "x": 0,
+          "y": 16
+        },
+        "targets": [
+          {
+            "expr": "sinistro_memory_bytes_used / sinistro_memory_bytes_total * 100",
+            "legendFormat": "{{instance}}",
+            "refId": "A"
+          }
+        ],
+        "yaxes": [
+          {
+            "format": "percent",
+            "label": "Memory Usage (%)",
+            "min": 0,
+            "max": 100,
+            "show": true
+          },
+          {
+            "format": "short",
+            "show": false
+          }
+        ],
+        "thresholds": [
+          {
+            "value": 75,
+            "color": "yellow",
+            "op": "gt",
+            "fill": true,
+            "line": true,
+            "yaxis": "left",
+            "alias": "Alert Threshold (75%)"
+          },
+          {
+            "value": 85,
+            "color": "red",
+            "op": "gt",
+            "fill": true,
+            "line": true,
+            "yaxis": "left",
+            "alias": "Critical Threshold (85%)"
+          }
+        ],
+        "alert": {
+          "conditions": [
+            {
+              "evaluator": {
+                "params": [75],
+                "type": "gt"
+              },
+              "operator": {
+                "type": "and"
+              },
+              "query": {
+                "params": ["A", "5m", "now"]
+              },
+              "reducer": {
+                "params": [],
+                "type": "avg"
+              },
+              "type": "query"
+            }
+          ],
+          "executionErrorState": "alerting",
+          "frequency": "1m",
+          "handler": 1,
+          "name": "Memory Usage High",
+          "noDataState": "no_data",
+          "notificationUid": "slack,pagerduty"
+        },
+        "refreshInterval": "15s",
+        "description": "Memory usage across production instances. Alert (yellow) at 75%, critical (red) at 85%. Target: <60% during normal operations."
+      },
+      {
+        "id": 6,
+        "title": "Database Connections",
+        "type": "graph",
+        "gridPos": {
+          "h": 8,
+          "w": 12,
+          "x": 12,
+          "y": 16
+        },
+        "targets": [
+          {
+            "expr": "sinistro_db_connections_active",
+            "legendFormat": "Active Connections",
+            "refId": "A"
+          },
+          {
+            "expr": "sinistro_db_connections_max",
+            "legendFormat": "Max Pool Size",
+            "refId": "B"
+          }
+        ],
+        "yaxes": [
+          {
+            "format": "short",
+            "label": "Connections",
+            "show": true
+          },
+          {
+            "format": "short",
+            "show": false
+          }
+        ],
+        "thresholds": [
+          {
+            "value": 15,
+            "color": "yellow",
+            "op": "gt",
+            "fill": true,
+            "line": true,
+            "yaxis": "left",
+            "alias": "Alert Threshold (15/20)"
+          },
+          {
+            "value": 18,
+            "color": "red",
+            "op": "gt",
+            "fill": true,
+            "line": true,
+            "yaxis": "left",
+            "alias": "Critical Threshold (18/20)"
+          }
+        ],
+        "alert": {
+          "conditions": [
+            {
+              "evaluator": {
+                "params": [15],
+                "type": "gt"
+              },
+              "operator": {
+                "type": "and"
+              },
+              "query": {
+                "params": ["A", "5m", "now"]
+              },
+              "reducer": {
+                "params": [],
+                "type": "avg"
+              },
+              "type": "query"
+            }
+          ],
+          "executionErrorState": "alerting",
+          "frequency": "1m",
+          "handler": 1,
+          "name": "Database Connections High",
+          "noDataState": "no_data",
+          "notificationUid": "slack,pagerduty"
+        },
+        "refreshInterval": "15s",
+        "description": "Active database connections out of total pool (20). Alert (yellow) at 15 connections, critical (red) at 18. Target: <12 connections during normal operations."
+      }
+    ],
+    "templating": {
+      "list": []
+    },
+    "time": {
+      "from": "now-1h",
+      "to": "now"
+    },
+    "refresh": "15s",
+    "description": "Real-time monitoring dashboard for 88i Sinistro production launch day. Tracks 6 critical metrics: request rate, error rate, P95 latency, CPU usage, memory usage, and database connections. Each metric includes alert (yellow) and critical (red) thresholds. Configured for 15-second refresh rate during launch operations.",
+    "uid": "sinistro-launch-day",
+    "links": [
+      {
+        "title": "Prometheus Queries",
+        "url": "http://prometheus.internal:9090/graph",
+        "type": "external"
+      },
+      {
+        "title": "Alertmanager",
+        "url": "http://alertmanager.internal:9093/",
+        "type": "external"
+      },
+      {
+        "title": "Launch Day Procedure",
+        "url": "/docs/GO_LIVE_EXECUTION.md",
+        "type": "external"
+      }
+    ]
+  }
+}
