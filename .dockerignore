@@ -1,37 +1,35 @@
-# Git
-.git
-.gitignore
-.gitmodules
+# Exclui arquivos locais que não devem ir para o container Docker
 
-# Dependencies
-node_modules
-**/node_modules
-.venv
-**/.venv
-.notebooklm-cli-venv/
-.notebooklm-playwright/
-.pip-cache/
-.uv-cache/
+# Ambiente virtual Python
+.venv/
+venv/
+env/
 
-# Built artifacts that are regenerated inside the image.  Excluded so local
-# rebuilds on the developer's machine don't invalidate the npm-install layer
-# that now depends on the full ui-tui/packages/hermes-ink/ tree being present.
-ui-tui/dist/
-ui-tui/packages/hermes-ink/dist/
+# Cache Python
+__pycache__/
+*.py[cod]
+*.so
 
-# CI/CD
-.github
+# Resultados de eval gerados localmente
+eval_results_*.json
 
-# Environment files
+# Ambiente local
 .env
+.envcd
 
-*.md
+# Git
+.git/
+.gitignore
 
-# Runtime data (bind-mounted at /opt/data; must not leak into build context)
-data/
-.hermes-docker/
-.notebooklm-home/
+# IDEs
+.idea/
+.vscode/
 
-# Compose/profile runtime state (bind-mounted; avoid ownership/secret issues)
-hermes-config/
-runtime/
+# macOS
+.DS_Store
+
+# ZIP do projeto antigo
+*.zip
+
+# Railway (não copiar config local)
+.railway/
