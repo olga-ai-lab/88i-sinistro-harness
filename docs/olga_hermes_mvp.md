@@ -185,3 +185,19 @@ Para materializar a cópia completa do repositório Hermes no workspace e aplica
 ```
 
 Isso clona `NousResearch/hermes-agent` em `third_party/hermes-agent` e copia os artefatos da Olga para `third_party/hermes-agent/olga/`.
+
+
+
+## 11) Execução integrada (FNOL -> output Olga)
+
+Para executar uma chamada real de FNOL no harness e já obter saída no formato Olga:
+
+```bash
+python olga_run_flow.py --narrativa "Bati minha moto ontem" --segurado-id SEG-001
+```
+
+Opcionalmente, salve também o payload cru do harness:
+
+```bash
+python olga_run_flow.py --narrativa "Bati minha moto ontem" --segurado-id SEG-001 --save-harness-json /tmp/harness_output.json
+```
