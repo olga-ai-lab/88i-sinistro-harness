@@ -1,0 +1,67 @@
+groups:
+  - name: 88i-sinistro-alerts
+    interval: 15s
+    rules:
+      # SLA Breaches
+      - alert: ExtractLatencySLABreach
+        expr: histogram_quantile(0.95, rate(extract_latency_seconds_bucket[5m])) > 0.1
+        for: 5m
+        labels:
+          severity: warning
+          service: extract
+        annotations:
+          summary: "Extract operation p95 latency exceeds 100ms"
+          description: "p95 latency for extract operations is {{ $value }}s on {{ $labels.instance }}"
+
+      - alert: FraudScoringLatencySLABreach
+        expr: histogram_quantile(0.95, rate(fraud_scoring_latency_seconds_bucket[5m])) > 0.15
+        for: 5m
+        labels:
+          severity: warning
+          service: fraud-scoring
+        annotations:
+          summary: "Fraud scoring operation p95 latency exceeds 150ms"
+          description: "p95 latency for fraud scoring operations is {{ $value }}s on {{ $labels.instance }}"
+
+      # Error Rates
+      - alert: HighErrorRate
+        expr: rate(sinistro_requests_total{status=~"5.."}[5m]) > 0.05
+        for: 5m
+        labels:
+          severity: critical
+          component: sinistro
+        annotations:
+          summary: "High error rate detected in Sinistro"
+          description: "Error rate is {{ $value | humanizePercentage }} on {{ $labels.instance }}"
+
+      # Resource Usage
+      - alert: HighCPUUsage
+        expr: process_cpu_seconds_total > 0.8
+        for: 5m
+        labels:
+          severity: warning
+          resource: cpu
+        annotations:
+          summary: "High CPU usage detected"
+          description: "CPU usage is {{ $value | humanizePercentage }} on {{ $labels.instance }}"
+
+      - alert: HighMemoryUsage
+        expr: process_resident_memory_bytes / 1024 / 1024 / 1024 > 0.8
+        for: 5m
+        labels:
+          severity: warning
+          resource: memory
+        annotations:
+          summary: "High memory usage detected"
+          description: "Memory usage is {{ $value }}GB on {{ $labels.instance }}"
+
+      # Service Health
+      - alert: ServiceDown
+        expr: up{job="88i-sinistro"} == 0
+        for: 1m
+        labels:
+          severity: critical
+          component: sinistro
+        annotations:
+          summary: "Sinistro service is down"
+          description: "Sinistro service on {{ $labels.instance }} is not responding"
