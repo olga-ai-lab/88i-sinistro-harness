@@ -40,9 +40,18 @@ from app.health import router as health_router
 from app.shutdown import graceful_shutdown
 from app import monitoring, metrics
 from app.middleware import RequestLoggingMiddleware
+from app.performance import PerformanceOptimizer, TARGET_LATENCIES
+from app.security import (
+    SecurityHeadersMiddleware,
+    InputValidationMiddleware,
+    RateLimitMiddleware,
+)
 
 # Configure logging
 logger = logging.getLogger(__name__)
+
+# Initialize performance optimizer
+optimizer = PerformanceOptimizer(target_latencies=TARGET_LATENCIES)
 
 
 # ============================================================
@@ -74,6 +83,10 @@ async def lifespan(app: FastAPI):
     logger.info("🚀 Application starting...")
     monitoring.setup_logging()
     monitoring.log_deployment_info()
+    
+    # Log performance optimizer configuration
+    logger.info(f"📊 Performance Optimizer initialized with SLA targets: {TARGET_LATENCIES}")
+    
     graceful_shutdown.setup_signal_handlers(app)
     
     # Add cleanup callbacks
@@ -96,6 +109,14 @@ app = FastAPI(
     version="0.2.0",  # Semana 2
     lifespan=lifespan,
 )
+
+# Add security middlewares (order matters: outermost to innermost)
+# 1. SecurityHeadersMiddleware - adds HTTP security headers
+# 2. InputValidationMiddleware - validates request format and size
+# 3. RateLimitMiddleware - rate limits per IP (innermost, closest to app)
+app.add_middleware(RateLimitMiddleware)
+app.add_middleware(InputValidationMiddleware)
+app.add_middleware(SecurityHeadersMiddleware)
 
 # Add request logging middleware
 app.add_middleware(RequestLoggingMiddleware)
@@ -490,6 +511,25 @@ async def shadow_relatorio_endpoint():
       - taxa_divergencia_critica <= 2%
     """
     return shadow_relatorio()
+
+
+@app.get("/metrics/performance", tags=["metrics"])
+async def get_performance_metrics():
+    """
+    Return current performance metrics for all tracked operations.
+    
+    Includes:
+      - count: number of operations recorded
+      - min/max/mean: latency statistics (ms)
+      - p50/p95/p99: percentile latencies (ms)
+      - target: SLA target latency (ms)
+      - sla_breaches: count of operations exceeding target
+      - compliance_pct: percentage of operations meeting SLA (0-100)
+    """
+    return {
+        "timestamp": datetime.utcnow().isoformat(),
+        "operations": optimizer.get_all_reports(),
+    }
 
 
 # ============================================================
