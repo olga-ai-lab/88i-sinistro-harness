@@ -1,0 +1,419 @@
+{
+  "status_page": {
+    "url": "https://status.88i-sinistro.io",
+    "api_endpoint": "https://api.statuspage.io/v1",
+    "page_id": "abc123xyz789",
+    "organization": "88i Sinistro"
+  },
+  "services": [
+    {
+      "id": "service_api",
+      "name": "88i Sinistro API",
+      "description": "Core API endpoints for request processing",
+      "components": [
+        {
+          "id": "component_api_core",
+          "name": "API Core",
+          "description": "Main API request processing service",
+          "status": "operational",
+          "group": "API Services"
+        },
+        {
+          "id": "component_auth",
+          "name": "Authentication Service",
+          "description": "OAuth2 and JWT token validation",
+          "status": "operational",
+          "group": "API Services"
+        },
+        {
+          "id": "component_rate_limit",
+          "name": "Rate Limiter",
+          "description": "Request rate limiting and throttling",
+          "status": "operational",
+          "group": "API Services"
+        }
+      ],
+      "status_page_enabled": true,
+      "monitoring_enabled": true
+    },
+    {
+      "id": "service_database",
+      "name": "Database",
+      "description": "PostgreSQL database cluster for data persistence",
+      "components": [
+        {
+          "id": "component_postgres_primary",
+          "name": "PostgreSQL Primary",
+          "description": "Primary database instance for writes",
+          "status": "operational",
+          "group": "Database"
+        },
+        {
+          "id": "component_postgres_replica",
+          "name": "PostgreSQL Replica",
+          "description": "Read replica for scaling queries",
+          "status": "operational",
+          "group": "Database"
+        },
+        {
+          "id": "component_db_backup",
+          "name": "Database Backups",
+          "description": "Automated backup service for data protection",
+          "status": "operational",
+          "group": "Database"
+        },
+        {
+          "id": "component_redis_cache",
+          "name": "Redis Cache",
+          "description": "In-memory cache for performance optimization",
+          "status": "operational",
+          "group": "Database"
+        }
+      ],
+      "status_page_enabled": true,
+      "monitoring_enabled": true
+    },
+    {
+      "id": "service_external",
+      "name": "External Services",
+      "description": "Third-party integrations and dependencies",
+      "components": [
+        {
+          "id": "component_payment_gateway",
+          "name": "Payment Gateway",
+          "description": "Stripe payment processing integration",
+          "status": "operational",
+          "group": "Integrations"
+        },
+        {
+          "id": "component_email_service",
+          "name": "Email Service",
+          "description": "SendGrid email delivery service",
+          "status": "operational",
+          "group": "Integrations"
+        },
+        {
+          "id": "component_analytics",
+          "name": "Analytics Service",
+          "description": "Google Analytics and custom analytics pipeline",
+          "status": "operational",
+          "group": "Integrations"
+        },
+        {
+          "id": "component_cdn",
+          "name": "CDN",
+          "description": "Cloudflare CDN for static content delivery",
+          "status": "operational",
+          "group": "Infrastructure"
+        }
+      ],
+      "status_page_enabled": true,
+      "monitoring_enabled": true
+    }
+  ],
+  "incident_notification": {
+    "channels": [
+      {
+        "id": "channel_statuspage_io",
+        "name": "StatusPage.io",
+        "type": "status_page",
+        "enabled": true,
+        "config": {
+          "api_key": "${STATUSPAGE_API_KEY}",
+          "page_id": "abc123xyz789",
+          "auto_resolve_after_minutes": 15
+        }
+      },
+      {
+        "id": "channel_email",
+        "name": "Email Notifications",
+        "type": "email",
+        "enabled": true,
+        "config": {
+          "from": "incidents@88i-sinistro.io",
+          "recipients": [
+            "team@88i-sinistro.io",
+            "support@88i-sinistro.io"
+          ],
+          "smtp_server": "${SMTP_SERVER}",
+          "smtp_port": 587,
+          "use_tls": true
+        }
+      },
+      {
+        "id": "channel_slack",
+        "name": "Slack Notifications",
+        "type": "slack",
+        "enabled": true,
+        "config": {
+          "webhook_url": "${SLACK_WEBHOOK_URL}",
+          "channels": [
+            "#88i-sinistro-incident",
+            "#general"
+          ],
+          "include_metrics": true,
+          "include_runbook_link": true
+        }
+      },
+      {
+        "id": "channel_pagerduty",
+        "name": "PagerDuty Escalation",
+        "type": "pagerduty",
+        "enabled": true,
+        "config": {
+          "api_key": "${PAGERDUTY_API_KEY}",
+          "service_id": "service_xyz",
+          "escalation_policy": "P1-Escalation-Policy",
+          "trigger_on_severity": ["P1", "P2"]
+        }
+      }
+    ],
+    "notification_rules": [
+      {
+        "id": "rule_p1_all_channels",
+        "name": "P1 - Notify All Channels",
+        "severity_level": "P1",
+        "trigger_after_minutes": 0,
+        "notification_channels": [
+          "channel_statuspage_io",
+          "channel_email",
+          "channel_slack",
+          "channel_pagerduty"
+        ],
+        "enabled": true
+      },
+      {
+        "id": "rule_p2_major_channels",
+        "name": "P2 - Notify Email, Slack, PagerDuty",
+        "severity_level": "P2",
+        "trigger_after_minutes": 5,
+        "notification_channels": [
+          "channel_statuspage_io",
+          "channel_email",
+          "channel_slack",
+          "channel_pagerduty"
+        ],
+        "enabled": true
+      },
+      {
+        "id": "rule_p3_slack_statuspage",
+        "name": "P3 - Notify Slack and StatusPage",
+        "severity_level": "P3",
+        "trigger_after_minutes": 10,
+        "notification_channels": [
+          "channel_statuspage_io",
+          "channel_slack"
+        ],
+        "enabled": true
+      },
+      {
+        "id": "rule_p4_statuspage_only",
+        "name": "P4 - StatusPage Only",
+        "severity_level": "P4",
+        "trigger_after_minutes": 30,
+        "notification_channels": [
+          "channel_statuspage_io"
+        ],
+        "enabled": true
+      }
+    ]
+  },
+  "metrics_integration": {
+    "provider": "prometheus",
+    "config": {
+      "prometheus_url": "https://metrics.88i-sinistro.io",
+      "scrape_interval_seconds": 30
+    },
+    "metrics": [
+      {
+        "id": "metric_error_rate",
+        "name": "Error Rate",
+        "query": "rate(http_requests_total{status=~'5..'}[5m]) / rate(http_requests_total[5m])",
+        "unit": "percentage",
+        "alert_threshold": 0.05,
+        "alert_severity": "P2"
+      },
+      {
+        "id": "metric_latency_p95",
+        "name": "P95 Latency",
+        "query": "histogram_quantile(0.95, rate(http_request_duration_seconds_bucket[5m]))",
+        "unit": "milliseconds",
+        "alert_threshold": 300,
+        "alert_severity": "P2"
+      },
+      {
+        "id": "metric_database_connections",
+        "name": "Database Connections",
+        "query": "pg_stat_activity_count{state='active'}",
+        "unit": "count",
+        "alert_threshold": 80,
+        "alert_severity": "P2"
+      },
+      {
+        "id": "metric_memory_usage",
+        "name": "Memory Usage",
+        "query": "container_memory_usage_bytes{pod=~'sinistro-api.*'} / container_spec_memory_limit_bytes{pod=~'sinistro-api.*'}",
+        "unit": "percentage",
+        "alert_threshold": 0.85,
+        "alert_severity": "P3"
+      },
+      {
+        "id": "metric_cpu_usage",
+        "name": "CPU Usage",
+        "query": "rate(container_cpu_usage_seconds_total{pod=~'sinistro-api.*'}[5m]) * 100",
+        "unit": "percentage",
+        "alert_threshold": 80,
+        "alert_severity": "P3"
+      }
+    ]
+  },
+  "alerting_rules": [
+    {
+      "id": "alert_error_rate_critical",
+      "name": "Error Rate Critical",
+      "metric": "metric_error_rate",
+      "condition": "> 0.10",
+      "duration": "2m",
+      "severity": "P1",
+      "description": "Error rate exceeds 10% - critical incident"
+    },
+    {
+      "id": "alert_error_rate_high",
+      "name": "Error Rate High",
+      "metric": "metric_error_rate",
+      "condition": "> 0.05",
+      "duration": "2m",
+      "severity": "P2",
+      "description": "Error rate exceeds 5% - high severity incident"
+    },
+    {
+      "id": "alert_latency_critical",
+      "name": "Latency Critical",
+      "metric": "metric_latency_p95",
+      "condition": "> 500",
+      "duration": "3m",
+      "severity": "P2",
+      "description": "P95 latency exceeds 500ms"
+    },
+    {
+      "id": "alert_latency_high",
+      "name": "Latency High",
+      "metric": "metric_latency_p95",
+      "condition": "> 300",
+      "duration": "3m",
+      "severity": "P3",
+      "description": "P95 latency exceeds 300ms"
+    },
+    {
+      "id": "alert_db_connections_critical",
+      "name": "Database Connections Critical",
+      "metric": "metric_database_connections",
+      "condition": "> 95",
+      "duration": "2m",
+      "severity": "P1",
+      "description": "Database connection pool nearly exhausted"
+    },
+    {
+      "id": "alert_memory_critical",
+      "name": "Memory Usage Critical",
+      "metric": "metric_memory_usage",
+      "condition": "> 0.95",
+      "duration": "5m",
+      "severity": "P1",
+      "description": "Memory usage exceeds 95% - risk of OOM"
+    },
+    {
+      "id": "alert_memory_high",
+      "name": "Memory Usage High",
+      "metric": "metric_memory_usage",
+      "condition": "> 0.85",
+      "duration": "5m",
+      "severity": "P3",
+      "description": "Memory usage exceeds 85%"
+    }
+  ],
+  "incident_management": {
+    "pagerduty": {
+      "enabled": true,
+      "api_key_env": "PAGERDUTY_API_KEY",
+      "integration_key_env": "PAGERDUTY_INTEGRATION_KEY",
+      "escalation_policies": {
+        "P1": "P1-Escalation-Policy",
+        "P2": "P2-Escalation-Policy",
+        "P3": "P3-Escalation-Policy"
+      },
+      "on_call_schedule": "88i-Sinistro-On-Call"
+    },
+    "slack": {
+      "enabled": true,
+      "webhook_url_env": "SLACK_WEBHOOK_URL",
+      "incident_channel": "#88i-sinistro-incident",
+      "on_call_channel": "#on-call",
+      "message_mentions": {
+        "P1": ["@channel"],
+        "P2": ["@here"],
+        "P3": []
+      }
+    },
+    "incident_template": {
+      "title_template": "[{severity}] {service} - {incident_type}",
+      "description_template": "Service: {service}\nSeverity: {severity}\nStatus: {status}\nDetected at: {timestamp}\nRunbook: {runbook_link}",
+      "tags": ["88i-sinistro", "production", "incident"]
+    }
+  },
+  "on_call_management": {
+    "provider": "pagerduty",
+    "schedules": [
+      {
+        "id": "schedule_us_east",
+        "name": "US East Region - On-Call",
+        "timezone": "America/New_York",
+        "rotation_days": 7,
+        "escalation_policy": "P1-Escalation-Policy"
+      },
+      {
+        "id": "schedule_us_west",
+        "name": "US West Region - On-Call",
+        "timezone": "America/Los_Angeles",
+        "rotation_days": 7,
+        "escalation_policy": "P2-Escalation-Policy"
+      },
+      {
+        "id": "schedule_emea",
+        "name": "EMEA Region - On-Call",
+        "timezone": "Europe/London",
+        "rotation_days": 7,
+        "escalation_policy": "P2-Escalation-Policy"
+      }
+    ]
+  },
+  "runbook_integration": {
+    "runbook_base_url": "https://docs.88i-sinistro.io/runbooks",
+    "runbooks": [
+      {
+        "id": "runbook_high_error_rate",
+        "name": "High Error Rate (>5%)",
+        "url": "https://docs.88i-sinistro.io/runbooks/high_error_rate",
+        "triggered_by": ["alert_error_rate_high", "alert_error_rate_critical"]
+      },
+      {
+        "id": "runbook_high_latency",
+        "name": "High Latency (>300ms P95)",
+        "url": "https://docs.88i-sinistro.io/runbooks/high_latency",
+        "triggered_by": ["alert_latency_critical", "alert_latency_high"]
+      },
+      {
+        "id": "runbook_db_failures",
+        "name": "Database Connection Failures",
+        "url": "https://docs.88i-sinistro.io/runbooks/database_failures",
+        "triggered_by": ["alert_db_connections_critical"]
+      },
+      {
+        "id": "runbook_memory_leak",
+        "name": "Memory Leak / OOM",
+        "url": "https://docs.88i-sinistro.io/runbooks/memory_leak",
+        "triggered_by": ["alert_memory_critical", "alert_memory_high"]
+      }
+    ]
+  }
+}
