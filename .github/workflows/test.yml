@@ -1,0 +1,40 @@
+name: Tests
+
+on:
+  push:
+    branches: [ main, develop ]
+  pull_request:
+    branches: [ main, develop ]
+
+jobs:
+  test:
+    runs-on: ubuntu-latest
+    strategy:
+      matrix:
+        python-version: ['3.11', '3.12', '3.13']
+
+    steps:
+      - uses: actions/checkout@v3
+
+      - name: Set up Python ${{ matrix.python-version }}
+        uses: actions/setup-python@v4
+        with:
+          python-version: ${{ matrix.python-version }}
+          cache: 'pip'
+
+      - name: Install dependencies
+        run: |
+          python -m pip install --upgrade pip poetry
+          poetry install --with dev
+
+      - name: Run unit tests
+        run: poetry run pytest tests/ -v --cov --cov-report=term-missing
+
+      - name: Run security tests
+        run: poetry run pytest tests/security/ -v -m security
+
+      - name: Run performance tests
+        run: poetry run pytest tests/performance/ -v -m performance
+
+      - name: Generate coverage badge
+        run: poetry run coverage-badge -o coverage.svg -f
