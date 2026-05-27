@@ -1,0 +1,131 @@
+#!/bin/bash
+# QUICK START — Deploy Octa em 30-45 minutos
+# Uso: source this file para ter todos os comandos à mão
+
+echo "
+🚀 DEPLOY OCTA — QUICK START
+
+Status: ✅ 100% Pronto
+
+Repositório: https://github.com/olga-ai-lab/88i-sinistro-harness
+
+═══════════════════════════════════════════════════════════════════════════
+
+OS 5 PASSOS DO DEPLOY:
+
+PASSO 1: Conectar Render.com (5 min)
+────────────────────────────────
+1. Abra: https://dashboard.render.com
+2. Clique: New + → Web Service
+3. Select: Deploy an existing repo
+4. Search: olga-ai-lab/88i-sinistro-harness
+5. Connect
+6. Settings:
+   Name: octa-sinistro-harness
+   Runtime: Docker
+   Region: Ohio
+   Plan: Standard
+7. Create Web Service
+
+═══════════════════════════════════════════════════════════════════════════
+
+PASSO 2: Configurar Variáveis de Ambiente (10 min)
+──────────────────────────────────────────────────
+No Render Dashboard → Settings → Environment Variables
+
+Adicione (copie seus valores reais):
+
+PORT=3000
+NODE_ENV=production
+LOG_LEVEL=info
+PYTHONUNBUFFERED=1
+ANTHROPIC_API_KEY=sk-ant-[seu-valor]
+INNGEST_API_KEY=evt-[seu-valor]
+INNGEST_SIGNING_KEY=signkey-[seu-valor]
+LANGFUSE_PUBLIC_KEY=pk-[seu-valor]
+LANGFUSE_SECRET_KEY=sk-[seu-valor]
+SUPABASE_URL=https://[seu-project].supabase.co
+SUPABASE_ANON_KEY=eyJ[seu-valor]
+DATABASE_URL=postgresql://[seu-valor]
+
+═══════════════════════════════════════════════════════════════════════════
+
+PASSO 3: Aguardar Deploy (10 min)
+────────────────────────────────
+1. Render inicia build (Docker)
+2. Aguarde: \"==> Your service is live!\"
+3. Copie URL: https://octa-sinistro-harness.onrender.com
+
+═══════════════════════════════════════════════════════════════════════════
+
+PASSO 4: Validar Health Check (5 min)
+─────────────────────────────────────
+# Terminal
+RENDER_URL=\"https://octa-sinistro-harness.onrender.com\"
+
+# Test 1: Health
+curl \$RENDER_URL/health
+# Esperado: {\"status\": \"healthy\"}
+
+# Test 2: Extract
+curl -X POST \$RENDER_URL/extract \\
+  -H \"Content-Type: application/json\" \\
+  -d '{\"claim_id\": \"TEST-001\", \"type\": \"AP\"}'
+
+# Test 3: Fraud
+curl -X POST \$RENDER_URL/fraud \\
+  -H \"Content-Type: application/json\" \\
+  -d '{\"claim_amount\": 5000}'
+
+═══════════════════════════════════════════════════════════════════════════
+
+PASSO 5: Executar Validação Automática (5-10 min)
+─────────────────────────────────────────────────
+# Clone/pull repositório
+cd ~/Projects/88i-sinistro-harness
+
+# Rodando validation script
+./scripts/validate_render_deployment.sh https://octa-sinistro-harness.onrender.com
+
+# Esperado: Todos ✅
+
+═══════════════════════════════════════════════════════════════════════════
+
+TROUBLESHOOTING:
+
+Build Failed?
+  → Clique \"Retry\" no Render
+  → Ou: git push origin main (auto-redeploy)
+
+Service Unhealthy?
+  → Check Render Logs
+  → Verify variáveis de ambiente
+  → Restart Service
+
+/health returns 404?
+  → FastAPI não iniciou
+  → Check: python main.py (local)
+  → Check: requirements.txt dependencies
+  → Check: Dockerfile
+
+═══════════════════════════════════════════════════════════════════════════
+
+✅ CHECKLIST FINAL
+
+[ ] Render.com conectado
+[ ] Build em progresso
+[ ] Variáveis de ambiente setadas
+[ ] Status \"Live\"
+[ ] Health check OK (200)
+[ ] Endpoints respondendo
+[ ] Validation script OK
+[ ] Pronto para go-live gradual!
+
+═══════════════════════════════════════════════════════════════════════════
+
+PRÓXIMO: Leia DEPLOY_STEPS.md para detalhes
+
+Status: 🟢 GO
+
+Sucesso! 🚀
+"
