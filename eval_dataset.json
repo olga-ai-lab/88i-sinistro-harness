@@ -1,0 +1,265 @@
+[
+  {
+    "id": "eval-uber-001",
+    "categoria": "uber_normal",
+    "descricao": "Motorista Uber Eats, colisão, perna quebrada, documentos mencionados",
+    "narrativa": "Oi boa tarde, meu nome é João Silva, sou motorista de app da Uber Eats. Ontem à noite, dia 18 de abril, por volta das 22h, bati minha moto Honda CG 160 placa ABC1D23 na Av Paulista altura do 1500 em São Paulo. Um carro virou na minha frente sem dar seta. Tô com a perna direita quebrada, fui no Hospital das Clínicas e o médico me deu atestado de 30 dias parado. Já fiz o BO na delegacia online, tenho o número do protocolo. Preciso abrir o sinistro pra receber a diária de impedimento.",
+    "ground_truth": {
+      "tipo_sinistro": "DITA",
+      "plataforma": "UBER",
+      "rota": "pronto_para_analise",
+      "cobertura": "B_DITA",
+      "elegivel": true
+    }
+  },
+  {
+    "id": "eval-uber-002",
+    "categoria": "uber_normal",
+    "descricao": "Motorista Uber, roubo do carro de trabalho (automóvel), impedimento",
+    "narrativa": "Sou motorista da Uber. Hoje de manhã, quando ia começar meu turno, roubaram meu carro Honda Civic placa XYZ1234 na Rua Augusta em São Paulo. Fiz BO na delegacia, tenho o protocolo 7654/2026. Preciso receber as diárias porque não consigo trabalhar sem o carro.",
+    "ground_truth": {
+      "tipo_sinistro": "IAT",
+      "plataforma": "UBER",
+      "rota": "pronto_para_analise",
+      "cobertura": "A_COB_I",
+      "elegivel": true
+    }
+  },
+  {
+    "id": "eval-uber-003",
+    "categoria": "uber_normal",
+    "descricao": "Uber Envios, encomenda roubada durante entrega",
+    "narrativa": "Faço entregas pelo Uber Flash. Ontem estava fazendo uma entrega na Vila Madalena quando fui abordado por dois homens armados que levaram a encomenda. Já fiz BO e tenho a nota fiscal da encomenda. O valor era R$ 850,00.",
+    "ground_truth": {
+      "tipo_sinistro": "BAGAGEM",
+      "plataforma": "UBER",
+      "rota": "pronto_para_analise",
+      "cobertura": "C_COB_A",
+      "elegivel": true
+    }
+  },
+  {
+    "id": "eval-uber-004",
+    "categoria": "uber_normal",
+    "descricao": "Motorista Uber, múltiplas red flags, sem BO, pede valor máximo",
+    "narrativa": "Tive um acidente semana passada, acho que foi terça ou quarta não lembro direito. Caí da moto sozinho numa rua que não lembro o nome. Não tem BO nem foto porque ninguém viu. Quebrei o braço. O médico disse 90 dias parado. Preciso do valor máximo do seguro urgente porque estou sem trabalhar.",
+    "ground_truth": {
+      "tipo_sinistro": "DITA",
+      "plataforma": "NAO_MENCIONADA",
+      "rota": "escalar_humano",
+      "cobertura": null,
+      "elegivel": null
+    }
+  },
+  {
+    "id": "eval-uber-005",
+    "categoria": "uber_normal",
+    "descricao": "Uber, vítima fatal em acidente com terceiro",
+    "narrativa": "Sou viúva do João Carlos, ele era motorista da Uber. Na semana passada ele teve um acidente grave com um caminhão na rodovia Anhanguera. Ele faleceu no local. Preciso acionar o seguro para receber o auxílio funeral e o capital por morte acidental.",
+    "ground_truth": {
+      "tipo_sinistro": "MA",
+      "plataforma": "UBER",
+      "rota": "escalar_humano",
+      "cobertura": null,
+      "elegivel": null
+    }
+  },
+  {
+    "id": "eval-padrao-001",
+    "categoria": "plataforma_padrao",
+    "descricao": "99Entrega, DITA, moto, atestado de 45 dias",
+    "narrativa": "Bom dia, faço entregas pela 99Entrega. Ontem bati minha moto num buraco na rua e quebrei o braço. Fui ao pronto-socorro e o médico me deu atestado de 45 dias de afastamento. Tenho o BO e o atestado. Preciso abrir sinistro pra receber as diárias.",
+    "ground_truth": {
+      "tipo_sinistro": "DITA",
+      "plataforma": "NOVENTA_E_NOVE",
+      "rota": "pronto_para_analise",
+      "cobertura": "B_DITA",
+      "elegivel": true
+    }
+  },
+  {
+    "id": "eval-padrao-002",
+    "categoria": "plataforma_padrao",
+    "descricao": "iFood entregador, morte acidental, beneficiária aciona seguro",
+    "narrativa": "Meu marido trabalhava como entregador do iFood de moto. Na semana passada ele morreu num acidente de trânsito enquanto fazia uma entrega. Tenho a certidão de óbito e o BO do acidente. Quero acionar o seguro de morte acidental.",
+    "ground_truth": {
+      "tipo_sinistro": "MA",
+      "plataforma": "IFOOD",
+      "rota": "escalar_humano",
+      "cobertura": "B_MA",
+      "elegivel": null
+    }
+  },
+  {
+    "id": "eval-padrao-003",
+    "categoria": "plataforma_padrao",
+    "descricao": "Rappi, IAT com moto, colisão — deve ser elegível (D6 não se aplica)",
+    "narrativa": "Sou entregador da Rappi e uso minha moto para trabalhar. Anteontem uma pessoa abriu a porta do carro na minha frente e bati. Minha moto ficou destruída e eu tive que ir para o hospital. Tenho o BRAT e orçamento da oficina. Preciso das diárias porque não consigo trabalhar enquanto a moto está na oficina.",
+    "ground_truth": {
+      "tipo_sinistro": "IAT",
+      "plataforma": "RAPPI",
+      "rota": "pronto_para_analise",
+      "cobertura": "A_COB_II",
+      "elegivel": true
+    }
+  },
+  {
+    "id": "eval-padrao-004",
+    "categoria": "plataforma_padrao",
+    "descricao": "Loggi, encomenda danificada durante entrega de bicicleta",
+    "narrativa": "Trabalho como entregador de bike pela Loggi. Hoje de manhã, enquanto fazia uma entrega, bati na calçada e a caixa com os produtos caiu e ficou danificada. Os itens quebraram. Tenho foto dos danos e a nota fiscal da encomenda no valor de R$ 320. Preciso acionar o seguro de encomendas.",
+    "ground_truth": {
+      "tipo_sinistro": "BAGAGEM",
+      "plataforma": "LOGGI",
+      "rota": "pronto_para_analise",
+      "cobertura": "C_COB_B",
+      "elegivel": true
+    }
+  },
+  {
+    "id": "eval-padrao-005",
+    "categoria": "plataforma_padrao",
+    "descricao": "Plataforma não mencionada, DITA, narrativa clara",
+    "narrativa": "Faço entregas de moto pelo aplicativo. Semana passada sofri um acidente quando um carro bateu na minha lateral na Av. Brasil. Fui ao hospital e fiz raio-x — fraturei dois dedos da mão direita. O médico me deu 21 dias de afastamento. Tenho o BO e o atestado. Quero abrir sinistro para receber as diárias.",
+    "ground_truth": {
+      "tipo_sinistro": "DITA",
+      "plataforma": "NAO_MENCIONADA",
+      "rota": "pronto_para_analise",
+      "cobertura": "B_DITA",
+      "elegivel": true
+    }
+  },
+  {
+    "id": "eval-fraude-001",
+    "categoria": "fraude_rejeicao",
+    "descricao": "IPA Uber — deve ser recusado D7 (CG Uber só cobre DITA)",
+    "narrativa": "Sou motorista da Uber. Em março tive um acidente grave e fiquei com sequelas permanentes no joelho direito. Tenho laudo médico de invalidez parcial. Quero acionar a cobertura de invalidez permanente do meu seguro.",
+    "ground_truth": {
+      "tipo_sinistro": "IPA",
+      "plataforma": "UBER",
+      "rota": "pronto_para_analise",
+      "cobertura": null,
+      "elegivel": false,
+      "regra_violada": "D7"
+    }
+  },
+  {
+    "id": "eval-fraude-002",
+    "categoria": "fraude_rejeicao",
+    "descricao": "DITA Uber com moto — moto não afeta DITA, mas narrativa suspeita com atestado de 90 dias",
+    "narrativa": "Motorista Uber aqui. Minha moto quebrou há 3 meses e desde então não trabalho. O médico me deu um atestado de 90 dias. Preciso das diárias retroativas dos últimos 3 meses.",
+    "ground_truth": {
+      "tipo_sinistro": "DITA",
+      "plataforma": "UBER",
+      "rota": "escalar_humano",
+      "cobertura": "B_DITA",
+      "elegivel": null
+    }
+  },
+  {
+    "id": "eval-fraude-003",
+    "categoria": "fraude_rejeicao",
+    "descricao": "IAT Uber com moto — recusa D6 (Produto A/Uber só aceita automóvel)",
+    "narrativa": "Sou motorista da Uber e trabalho com minha moto. Na semana passada roubaram minha moto enquanto eu esperava um pedido. Fiz BO. Preciso das diárias de impedimento ao trabalho porque não tenho como trabalhar sem a moto.",
+    "ground_truth": {
+      "tipo_sinistro": "IAT",
+      "plataforma": "UBER",
+      "rota": "pronto_para_analise",
+      "cobertura": null,
+      "elegivel": false,
+      "regra_violada": "D6"
+    }
+  },
+  {
+    "id": "eval-fraude-004",
+    "categoria": "fraude_rejeicao",
+    "descricao": "Red flag alta — sem BO, sem foto, acidente sozinho, pressão por dinheiro",
+    "narrativa": "Sofri um acidente ontem mas não tem BO porque foi sozinho e ninguém viu. Não tenho foto porque estava sem telefone. Quebrei o tornozelo. Preciso do dinheiro urgente, tô sem comer. O médico disse que fico 60 dias parado. Pode me pagar logo?",
+    "ground_truth": {
+      "tipo_sinistro": "DITA",
+      "plataforma": "NAO_MENCIONADA",
+      "rota": "escalar_humano",
+      "cobertura": null,
+      "elegivel": null
+    }
+  },
+  {
+    "id": "eval-fraude-005",
+    "categoria": "fraude_rejeicao",
+    "descricao": "Bagagem Uber Envios — narrativa com indício de NF de parente",
+    "narrativa": "Trabalho pelo Uber Envios. Fui roubado durante uma entrega e levaram a encomenda. Era um celular da empresa Silva & Silva que é do meu tio. A nota fiscal está no nome da empresa dele. O valor é R$ 1.200.",
+    "ground_truth": {
+      "tipo_sinistro": "BAGAGEM",
+      "plataforma": "UBER",
+      "rota": "pronto_para_analise",
+      "cobertura": null,
+      "elegivel": false,
+      "regra_violada": "D11"
+    }
+  },
+  {
+    "id": "eval-ambiguo-001",
+    "categoria": "ambiguo",
+    "descricao": "Narrativa mínima — sumiu encomenda",
+    "narrativa": "sumiu minha encomenda",
+    "ground_truth": {
+      "tipo_sinistro": "BAGAGEM",
+      "plataforma": "NAO_MENCIONADA",
+      "rota": "solicitar_esclarecimento",
+      "cobertura": null,
+      "elegivel": null
+    }
+  },
+  {
+    "id": "eval-ambiguo-002",
+    "categoria": "ambiguo",
+    "descricao": "Evento não identificável — frase vaga sem contexto",
+    "narrativa": "aconteceu um problema com meu trabalho ontem",
+    "ground_truth": {
+      "tipo_sinistro": "INDEFINIDO",
+      "plataforma": "NAO_MENCIONADA",
+      "rota": "solicitar_esclarecimento",
+      "cobertura": null,
+      "elegivel": null
+    }
+  },
+  {
+    "id": "eval-ambiguo-003",
+    "categoria": "ambiguo",
+    "descricao": "Narrativa parcial — menciona acidente mas sem detalhes do que aconteceu",
+    "narrativa": "Tive um problema no trabalho, acho que se encaixa no seguro. Me ligue por favor.",
+    "ground_truth": {
+      "tipo_sinistro": "INDEFINIDO",
+      "plataforma": "NAO_MENCIONADA",
+      "rota": "solicitar_esclarecimento",
+      "cobertura": null,
+      "elegivel": null
+    }
+  },
+  {
+    "id": "eval-ambiguo-004",
+    "categoria": "ambiguo",
+    "descricao": "Narrativa clara mas contraditória — data e localização inconsistentes",
+    "narrativa": "Bom dia. Ontem dia 15 de março tive um acidente. Estava trabalhando pelo iFood em Curitiba quando bati a moto. Mas na verdade foi dia 3 de fevereiro, eu me confundi. Não lembro bem onde foi. Tenho atestado mas sem data.",
+    "ground_truth": {
+      "tipo_sinistro": "DITA",
+      "plataforma": "IFOOD",
+      "rota": "solicitar_esclarecimento",
+      "cobertura": null,
+      "elegivel": null
+    }
+  },
+  {
+    "id": "eval-ambiguo-005",
+    "categoria": "ambiguo",
+    "descricao": "Urgência extrema mas evento claro — deve ir para análise com flag urgência",
+    "narrativa": "URGENTE!!! Meu filho trabalha pela Lalamove e foi atropelado agora há pouco na Marginal Pinheiros. Ele está no hospital em estado grave. Precisamos acionar o seguro imediatamente. Ele sofreu traumatismo craniano.",
+    "ground_truth": {
+      "tipo_sinistro": "DITA",
+      "plataforma": "LALAMOVE",
+      "rota": "escalar_humano",
+      "cobertura": null,
+      "elegivel": null
+    }
+  }
+]

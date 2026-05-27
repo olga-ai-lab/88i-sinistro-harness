@@ -1,0 +1,58 @@
+name: CI — 88i Sinistro Harness
+
+on:
+  push:
+    branches: [main, develop]
+  pull_request:
+    branches: [main]
+
+jobs:
+  test:
+    name: Testes + Eval Gate
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup Python 3.12
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+          cache: pip
+
+      - name: Instalar dependências
+        run: pip install -r requirements.txt
+
+      - name: Gerar cliente BAML
+        run: baml-cli generate
+
+      - name: test_validadores (sem LLM — 12/12)
+        run: python test_validadores.py
+
+      - name: test_semana3 (sem LLM — 9/9)
+        run: python test_semana3.py
+
+      - name: test_hitl (sem LLM — 10/10)
+        run: python test_hitl.py
+
+      - name: test_shadow (sem LLM — 10/10)
+        run: python test_shadow.py
+
+      - name: test_eval framework (sem LLM — 10/10)
+        run: python test_eval.py
+
+      - name: test_narrativas (com LLM — 3/3)
+        if: ${{ env.ANTHROPIC_API_KEY != '' }}
+        env:
+          ANTHROPIC_API_KEY: ${{ secrets.ANTHROPIC_API_KEY }}
+        run: python test_narrativas.py
+
+      - name: eval_runner quality gate (com LLM — score >= 80%)
+        if: ${{ env.ANTHROPIC_API_KEY != '' }}
+        env:
+          ANTHROPIC_API_KEY: ${{ secrets.ANTHROPIC_API_KEY }}
+          LANGFUSE_PUBLIC_KEY: ${{ secrets.LANGFUSE_PUBLIC_KEY }}
+          LANGFUSE_SECRET_KEY: ${{ secrets.LANGFUSE_SECRET_KEY }}
+        run: python eval_runner.py --verbose --no-save

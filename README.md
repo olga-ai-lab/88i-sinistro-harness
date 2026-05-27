@@ -1,215 +1,208 @@
-<p align="center">
-  <img src="assets/banner.png" alt="Hermes Agent" width="100%">
-</p>
+# 88i Sinistro Harness
 
-# Hermes Agent ☤
+Agente completo de análise de sinistros **Last Mile Delivery** para a 88i Seguradora Digital.
 
-<p align="center">
-  <a href="https://hermes-agent.nousresearch.com/docs/"><img src="https://img.shields.io/badge/Docs-hermes--agent.nousresearch.com-FFD700?style=for-the-badge" alt="Documentation"></a>
-  <a href="https://discord.gg/NousResearch"><img src="https://img.shields.io/badge/Discord-5865F2?style=for-the-badge&logo=discord&logoColor=white" alt="Discord"></a>
-  <a href="https://github.com/NousResearch/hermes-agent/blob/main/LICENSE"><img src="https://img.shields.io/badge/License-MIT-green?style=for-the-badge" alt="License: MIT"></a>
-  <a href="https://nousresearch.com"><img src="https://img.shields.io/badge/Built%20by-Nous%20Research-blueviolet?style=for-the-badge" alt="Built by Nous Research"></a>
-  <a href="README.zh-CN.md"><img src="https://img.shields.io/badge/Lang-中文-red?style=for-the-badge" alt="中文"></a>
-</p>
-
-**The self-improving AI agent built by [Nous Research](https://nousresearch.com).** It's the only agent with a built-in learning loop — it creates skills from experience, improves them during use, nudges itself to persist knowledge, searches its own past conversations, and builds a deepening model of who you are across sessions. Run it on a $5 VPS, a GPU cluster, or serverless infrastructure that costs nearly nothing when idle. It's not tied to your laptop — talk to it from Telegram while it works on a cloud VM.
-
-Use any model you want — [Nous Portal](https://portal.nousresearch.com), [OpenRouter](https://openrouter.ai) (200+ models), [NovitaAI](https://novita.ai) (AI-native cloud for Model API, Agent Sandbox, and GPU Cloud), [NVIDIA NIM](https://build.nvidia.com) (Nemotron), [Xiaomi MiMo](https://platform.xiaomimimo.com), [z.ai/GLM](https://z.ai), [Kimi/Moonshot](https://platform.moonshot.ai), [MiniMax](https://www.minimax.io), [Hugging Face](https://huggingface.co), OpenAI, or your own endpoint. Switch with `hermes model` — no code changes, no lock-in.
-
-<table>
-<tr><td><b>A real terminal interface</b></td><td>Full TUI with multiline editing, slash-command autocomplete, conversation history, interrupt-and-redirect, and streaming tool output.</td></tr>
-<tr><td><b>Lives where you do</b></td><td>Telegram, Discord, Slack, WhatsApp, Signal, and CLI — all from a single gateway process. Voice memo transcription, cross-platform conversation continuity.</td></tr>
-<tr><td><b>A closed learning loop</b></td><td>Agent-curated memory with periodic nudges. Autonomous skill creation after complex tasks. Skills self-improve during use. FTS5 session search with LLM summarization for cross-session recall. <a href="https://github.com/plastic-labs/honcho">Honcho</a> dialectic user modeling. Compatible with the <a href="https://agentskills.io">agentskills.io</a> open standard.</td></tr>
-<tr><td><b>Scheduled automations</b></td><td>Built-in cron scheduler with delivery to any platform. Daily reports, nightly backups, weekly audits — all in natural language, running unattended.</td></tr>
-<tr><td><b>Delegates and parallelizes</b></td><td>Spawn isolated subagents for parallel workstreams. Write Python scripts that call tools via RPC, collapsing multi-step pipelines into zero-context-cost turns.</td></tr>
-<tr><td><b>Runs anywhere, not just your laptop</b></td><td>Six terminal backends — local, Docker, SSH, Singularity, Modal, and Daytona. Daytona and Modal offer serverless persistence — your agent's environment hibernates when idle and wakes on demand, costing nearly nothing between sessions. Run it on a $5 VPS or a GPU cluster.</td></tr>
-<tr><td><b>Research-ready</b></td><td>Batch trajectory generation, trajectory compression for training the next generation of tool-calling models.</td></tr>
-</table>
+Substitui o OCTA v4.0 (n8n) no fluxo de **First Notice of Loss (FNOL)**.
+Cliente: **CloudWalk/InfinitePay** — volume: 33.000 sinistros/mês.
 
 ---
 
-## Quick Install
+## Stack
 
-### Linux, macOS, WSL2, Termux
+| Componente | Tecnologia |
+|---|---|
+| Extração estruturada | BAML 0.221.0 + Claude Sonnet |
+| Orquestração | LangGraph 1.1.8 |
+| Workflow durável | Inngest 0.5.18 |
+| Observabilidade | Langfuse 4.3.1 |
+| HTTP server | FastAPI 0.115 + uvicorn |
+| Rules engine | Python puro (DMN-style, auditável SUSEP) |
+| Pipeline documental | Skills Hermes (classifier → forensics → adjudicator) |
+| Validação forense | Checksums BR + EXIF + ELA + API CFM |
+| HITL | Fila priorizada para a Rosi (analista 88i) |
+| Shadow mode | SHADOW → CANARY → CUTOVER |
+| Eval | Dataset 20 casos + runner + Langfuse |
+| Deploy | Railway (Docker) |
+| Banco | Supabase (PostgreSQL + Edge Functions) |
+
+---
+
+## Quickstart
 
 ```bash
-curl -fsSL https://raw.githubusercontent.com/NousResearch/hermes-agent/main/scripts/install.sh | bash
+git clone https://github.com/olga-ai-lab/88i-sinistro-harness
+cd 88i-sinistro-harness
+
+python3 -m venv .venv && source .venv/bin/activate
+pip install -r requirements.txt
+baml-cli generate
+
+cp .env.example .env
+# preencher ANTHROPIC_API_KEY
+
+python test_narrativas.py   # 3/3 PASS
+python test_semana3.py      # 9/9 PASS
+python test_hitl.py         # 10/10 PASS
+python test_eval.py         # 10/10 PASS
+python test_shadow.py       # 10/10 PASS
+python test_validadores.py  # 12/12 PASS
 ```
 
-### Windows (native, PowerShell) — Early Beta
+---
 
-> **Heads up:** Native Windows support is **early beta**. It installs and runs, but hasn't been road-tested as broadly as our Linux/macOS/WSL2 paths. Please [file issues](https://github.com/NousResearch/hermes-agent/issues) when you hit rough edges. For the most battle-tested Windows setup today, run the Linux/macOS one-liner above inside **WSL2**.
+## Estrutura
 
-Run this in PowerShell:
-
-```powershell
-iex (irm https://raw.githubusercontent.com/NousResearch/hermes-agent/main/scripts/install.ps1)
+```
+88i-sinistro-harness/
+│
+├── agent/                          # núcleo do agente
+│   ├── baml_src/sinistro.baml      # schema BAML + prompt ExtrairSinistro
+│   ├── baml_client/                # client gerado (NÃO editar)
+│   ├── agent.py                    # LangGraph StateGraph (8 nós)
+│   ├── tools.py                    # consultar_apolice, historico, registrar
+│   ├── rules_engine.py             # motor D1-D15 (ZERO LLM)
+│   ├── dmn_tables.py               # tabelas de decisão UBER/PADRAO
+│   ├── doc_pipeline.py             # classifier→forensics→adjudicator
+│   ├── doc_validators.py           # EXIF, PDF, checksums BR, CRM, ELA
+│   ├── hitl_queue.py               # fila HITL para a Rosi
+│   ├── shadow_comparator.py        # compara OCTA vs novo agente
+│   ├── shadow_mode.py              # SHADOW/CANARY/CUTOVER
+│   ├── eval_dataset.json           # 20 casos anotados
+│   ├── eval_runner.py              # runner de avaliação
+│   ├── eval_langfuse.py            # integração Langfuse
+│   ├── observability.py            # Langfuse wrapper fail-open
+│   ├── inngest_functions.py        # workflow durável
+│   └── main.py                     # FastAPI endpoints
+│
+├── skills/                         # skills Hermes (copiar para ~/.hermes/skills/insurance/)
+│   ├── olga-analista-seguros-88i/  # knowledge base produto 88i
+│   ├── sinistro-doc-classifier/    # etapa 1: classifica documento
+│   ├── sinistro-doc-forensics/     # etapa 2: extrai campos + forense
+│   └── sinistro-claim-adjudicator/ # etapa 3: decisão final + fraude
+│
+├── supabase/
+│   ├── migrations/001_sinistros.sql
+│   └── functions/sinistro-webhook/ # Edge Function (webhook → Inngest)
+│
+├── docs/
+│   ├── arquitetura.md
+│   ├── runbook.md
+│   └── condicoes-gerais/           # PDFs CGs 88i março/2026
+│
+└── .github/workflows/ci.yml        # CI: testes + eval gate 80%
 ```
 
-The installer handles everything: uv, Python 3.11, Node.js, ripgrep, ffmpeg, **and a portable Git Bash** (MinGit, unpacked to `%LOCALAPPDATA%\hermes\git` — no admin required, completely isolated from any system Git install).  Hermes uses this bundled Git Bash to run shell commands.
+---
 
-If you already have Git installed, the installer detects it and uses that instead.  Otherwise a ~45MB MinGit download is all you need — it won't touch or interfere with any system Git.
+## Arquitetura do Agente
 
-> **Android / Termux:** The tested manual path is documented in the [Termux guide](https://hermes-agent.nousresearch.com/docs/getting-started/termux). On Termux, Hermes installs a curated `.[termux]` extra because the full `.[all]` extra currently pulls Android-incompatible voice dependencies.
->
-> **Windows:** Native Windows is supported as an **early beta** — the PowerShell one-liner above installs everything, but expect rough edges and please file issues when you hit them. If you'd rather use WSL2 (our most battle-tested Windows path), the Linux command works there too. Native Windows install lives under `%LOCALAPPDATA%\hermes`; WSL2 installs under `~/.hermes` as on Linux.  The only Hermes feature that currently needs WSL2 specifically is the browser-based dashboard chat pane (it uses a POSIX PTY — classic CLI and gateway both run natively).
+```
+WhatsApp (Evolution API)
+    ↓
+Supabase Edge Function
+    ↓ grava raw_inbox (auditoria SUSEP)
+Inngest event: sinistro/fnol.received
+    ↓
+FastAPI POST /sinistro
+    ↓
+LangGraph Pipeline:
+  narrativa
+    → no_extrair (BAML/Claude) ──────────── extrai tipo, plataforma, red_flags
+    → no_consultar_contexto ─────────────── apólice + histórico (Supabase)
+    → no_decidir_rota ───────────────────── determinístico (ZERO LLM)
+         ├── escalar_humano ──────────────── fila HITL (Rosi)
+         ├── solicitar_esclarecimento ────── perguntas ao segurado
+         └── pronto_para_analise
+               → rules_engine (D1-D15) ──── elegibilidade + cobertura
+               → doc_pipeline ──────────────── classifier→forensics→adjudicator
+               → registrar_sinistro ─────── protocolo 88i-YYYY-XXXXXXXX
+```
 
-After installation:
+---
+
+## Plataformas Suportadas
+
+| Plataforma | Regime | D6 (veiculo) | D7 (coberturas) | Cooldown DITA |
+|---|---|---|---|---|
+| Uber | CP Uber | só automóvel | só DITA | 30 dias |
+| 99 / iFood / Rappi / Loggi / Lalamove | CG Padrão | qualquer | todas (MA, IPA, DMHO, etc.) | 90 dias |
+| NAO_MENCIONADA | CG Padrão | qualquer | todas | 90 dias |
+
+---
+
+## Instalando as Skills no Hermes
 
 ```bash
-source ~/.bashrc    # reload shell (or: source ~/.zshrc)
-hermes              # start chatting!
+mkdir -p ~/.hermes/skills/insurance
+
+cp -r skills/olga-analista-seguros-88i   ~/.hermes/skills/insurance/
+cp -r skills/sinistro-doc-classifier     ~/.hermes/skills/insurance/
+cp -r skills/sinistro-doc-forensics      ~/.hermes/skills/insurance/
+cp -r skills/sinistro-claim-adjudicator  ~/.hermes/skills/insurance/
 ```
 
 ---
 
-## Getting Started
+## Variáveis de Ambiente
 
 ```bash
-hermes              # Interactive CLI — start a conversation
-hermes model        # Choose your LLM provider and model
-hermes tools        # Configure which tools are enabled
-hermes config set   # Set individual config values
-hermes gateway      # Start the messaging gateway (Telegram, Discord, etc.)
-hermes setup        # Run the full setup wizard (configures everything at once)
-hermes claw migrate # Migrate from OpenClaw (if coming from OpenClaw)
-hermes update       # Update to the latest version
-hermes doctor       # Diagnose any issues
-```
+# Obrigatório
+ANTHROPIC_API_KEY=sk-ant-...
 
-📖 **[Full documentation →](https://hermes-agent.nousresearch.com/docs/)**
+# Supabase (produção)
+SUPABASE_URL=https://xxx.supabase.co
+SUPABASE_SERVICE_KEY=eyJ...
+
+# Inngest
+INNGEST_SIGNING_KEY=...
+
+# Langfuse (observabilidade)
+LANGFUSE_PUBLIC_KEY=pk-lf-...
+LANGFUSE_SECRET_KEY=sk-lf-...
+
+# Shadow mode
+SHADOW_MODE=shadow     # shadow | canary | cutover
+CANARY_PERCENT=5       # % de sinistros no novo agente (canary)
+```
 
 ---
 
-## Skip the API-key collection — Nous Portal
+## Endpoints FastAPI
 
-Hermes works with whatever provider you want — that's not changing. But if you'd rather not collect five separate API keys for the model, web search, image generation, TTS, and a cloud browser, **[Nous Portal](https://portal.nousresearch.com)** covers all of them under one subscription:
+| Método | Endpoint | Descrição |
+|---|---|---|
+| POST | `/sinistro` | Recebe narrativa, roda pipeline completo |
+| POST | `/sinistro/{protocolo}/documentos` | Recebe arquivos, roda pipeline documental |
+| GET | `/hitl/fila` | Lista fila de revisão para a Rosi |
+| GET | `/hitl/tarefa/{id}` | Detalhe de uma tarefa HITL |
+| POST | `/hitl/tarefa/{id}/resolver` | Rosi submete decisão |
+| GET | `/shadow/relatorio` | Taxa de concordância OCTA vs novo agente |
+| GET | `/health` | Healthcheck Railway |
 
-- **300+ models** — pick any of them with `/model <name>`
-- **Tool Gateway** — web search (Firecrawl), image generation (FAL), text-to-speech (OpenAI), cloud browser (Browser Use), all routed through your sub. No extra accounts.
+---
 
-One command from a fresh install:
+## Eval
 
 ```bash
-hermes setup --portal
+# Dry-run (sem LLM) — testa framework
+python eval_runner.py --dry-run
+
+# Roda avaliação real (20 casos com Claude)
+python eval_runner.py --verbose
+
+# Filtra por categoria
+python eval_runner.py --categoria uber_normal
+
+# Envia resultados para Langfuse
+python eval_langfuse.py
 ```
 
-That logs you in via OAuth, sets Nous as your provider, and turns on the Tool Gateway. Check what's wired up any time with `hermes portal status`. Full details on the [Tool Gateway docs page](https://hermes-agent.nousresearch.com/docs/user-guide/features/tool-gateway).
-
-You can still bring your own keys per-tool whenever you want — the gateway is per-backend, not all-or-nothing.
+Quality gate: **score_geral >= 80%** → CI passa.
 
 ---
 
-## CLI vs Messaging Quick Reference
+## Contatos 88i
 
-Hermes has two entry points: start the terminal UI with `hermes`, or run the gateway and talk to it from Telegram, Discord, Slack, WhatsApp, Signal, or Email. Once you're in a conversation, many slash commands are shared across both interfaces.
-
-| Action | CLI | Messaging platforms |
-|---------|-----|---------------------|
-| Start chatting | `hermes` | Run `hermes gateway setup` + `hermes gateway start`, then send the bot a message |
-| Start fresh conversation | `/new` or `/reset` | `/new` or `/reset` |
-| Change model | `/model [provider:model]` | `/model [provider:model]` |
-| Set a personality | `/personality [name]` | `/personality [name]` |
-| Retry or undo the last turn | `/retry`, `/undo` | `/retry`, `/undo` |
-| Compress context / check usage | `/compress`, `/usage`, `/insights [--days N]` | `/compress`, `/usage`, `/insights [days]` |
-| Browse skills | `/skills` or `/<skill-name>` | `/<skill-name>` |
-| Interrupt current work | `Ctrl+C` or send a new message | `/stop` or send a new message |
-| Platform-specific status | `/platforms` | `/status`, `/sethome` |
-
-For the full command lists, see the [CLI guide](https://hermes-agent.nousresearch.com/docs/user-guide/cli) and the [Messaging Gateway guide](https://hermes-agent.nousresearch.com/docs/user-guide/messaging).
-
----
-
-## Documentation
-
-All documentation lives at **[hermes-agent.nousresearch.com/docs](https://hermes-agent.nousresearch.com/docs/)**:
-
-| Section | What's Covered |
-|---------|---------------|
-| [Quickstart](https://hermes-agent.nousresearch.com/docs/getting-started/quickstart) | Install → setup → first conversation in 2 minutes |
-| [CLI Usage](https://hermes-agent.nousresearch.com/docs/user-guide/cli) | Commands, keybindings, personalities, sessions |
-| [Configuration](https://hermes-agent.nousresearch.com/docs/user-guide/configuration) | Config file, providers, models, all options |
-| [Messaging Gateway](https://hermes-agent.nousresearch.com/docs/user-guide/messaging) | Telegram, Discord, Slack, WhatsApp, Signal, Home Assistant |
-| [Security](https://hermes-agent.nousresearch.com/docs/user-guide/security) | Command approval, DM pairing, container isolation |
-| [Tools & Toolsets](https://hermes-agent.nousresearch.com/docs/user-guide/features/tools) | 40+ tools, toolset system, terminal backends |
-| [Skills System](https://hermes-agent.nousresearch.com/docs/user-guide/features/skills) | Procedural memory, Skills Hub, creating skills |
-| [Memory](https://hermes-agent.nousresearch.com/docs/user-guide/features/memory) | Persistent memory, user profiles, best practices |
-| [MCP Integration](https://hermes-agent.nousresearch.com/docs/user-guide/features/mcp) | Connect any MCP server for extended capabilities |
-| [Cron Scheduling](https://hermes-agent.nousresearch.com/docs/user-guide/features/cron) | Scheduled tasks with platform delivery |
-| [Context Files](https://hermes-agent.nousresearch.com/docs/user-guide/features/context-files) | Project context that shapes every conversation |
-| [Architecture](https://hermes-agent.nousresearch.com/docs/developer-guide/architecture) | Project structure, agent loop, key classes |
-| [Contributing](https://hermes-agent.nousresearch.com/docs/developer-guide/contributing) | Development setup, PR process, code style |
-| [CLI Reference](https://hermes-agent.nousresearch.com/docs/reference/cli-commands) | All commands and flags |
-| [Environment Variables](https://hermes-agent.nousresearch.com/docs/reference/environment-variables) | Complete env var reference |
-
----
-
-## Migrating from OpenClaw
-
-If you're coming from OpenClaw, Hermes can automatically import your settings, memories, skills, and API keys.
-
-**During first-time setup:** The setup wizard (`hermes setup`) automatically detects `~/.openclaw` and offers to migrate before configuration begins.
-
-**Anytime after install:**
-
-```bash
-hermes claw migrate              # Interactive migration (full preset)
-hermes claw migrate --dry-run    # Preview what would be migrated
-hermes claw migrate --preset user-data   # Migrate without secrets
-hermes claw migrate --overwrite  # Overwrite existing conflicts
-```
-
-What gets imported:
-- **SOUL.md** — persona file
-- **Memories** — MEMORY.md and USER.md entries
-- **Skills** — user-created skills → `~/.hermes/skills/openclaw-imports/`
-- **Command allowlist** — approval patterns
-- **Messaging settings** — platform configs, allowed users, working directory
-- **API keys** — allowlisted secrets (Telegram, OpenRouter, OpenAI, Anthropic, ElevenLabs)
-- **TTS assets** — workspace audio files
-- **Workspace instructions** — AGENTS.md (with `--workspace-target`)
-
-See `hermes claw migrate --help` for all options, or use the `openclaw-migration` skill for an interactive agent-guided migration with dry-run previews.
-
----
-
-## Contributing
-
-We welcome contributions! See the [Contributing Guide](https://hermes-agent.nousresearch.com/docs/developer-guide/contributing) for development setup, code style, and PR process.
-
-Quick start for contributors — clone and go with `setup-hermes.sh`:
-
-```bash
-git clone https://github.com/NousResearch/hermes-agent.git
-cd hermes-agent
-./setup-hermes.sh     # installs uv, creates venv, installs .[all], symlinks ~/.local/bin/hermes
-./hermes              # auto-detects the venv, no need to `source` first
-```
-
-Manual path (equivalent to the above):
-
-```bash
-curl -LsSf https://astral.sh/uv/install.sh | sh
-uv venv .venv --python 3.11
-source .venv/bin/activate
-uv pip install -e ".[all,dev]"
-scripts/run_tests.sh
-```
-
----
-
-## Community
-
-- 💬 [Discord](https://discord.gg/NousResearch)
-- 📚 [Skills Hub](https://agentskills.io)
-- 🐛 [Issues](https://github.com/NousResearch/hermes-agent/issues)
-- 🔌 [computer-use-linux](https://github.com/avifenesh/computer-use-linux) — Linux desktop-control MCP server for Hermes and other MCP hosts, with AT-SPI accessibility trees, Wayland/X11 input, screenshots, and compositor window targeting.
-- 🔌 [HermesClaw](https://github.com/AaronWong1999/hermesclaw) — Community WeChat bridge: Run Hermes Agent and OpenClaw on the same WeChat account.
-
----
-
-## License
-
-MIT — see [LICENSE](LICENSE).
-
-Built by [Nous Research](https://nousresearch.com).
+- Sinistros: sinistrosapdelivery@88i.io
+- SAC: 0800 718 7813
+- WhatsApp: +55 11 97803-8881
