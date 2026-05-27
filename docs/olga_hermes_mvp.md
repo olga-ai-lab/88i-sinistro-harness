@@ -158,3 +158,46 @@ Healthcheck operacional do serviço.
 - [ ] Logs com protocolo e correlation id.
 - [ ] Variáveis de ambiente de produção configuradas.
 
+## 8) Artefatos prontos no repositório
+
+- `docs/olga/system_prompt.md`
+- `docs/olga/output_schema.json`
+- `docs/olga/http_contracts.md`
+
+## 9) Início imediato (executável)
+
+Este repositório agora inclui `olga_bootstrap.py`, um cliente CLI para iniciar integração real com os endpoints:
+
+```bash
+python olga_bootstrap.py health
+python olga_bootstrap.py fnol --narrativa "Bati minha moto ontem" --segurado-id SEG-001
+python olga_bootstrap.py docs --protocolo 88i-2026-00000001 --file /caminho/bo.pdf
+```
+
+Objetivo: permitir validação fim-a-fim do contrato HTTP antes de plugar no runtime Hermes.
+
+## 10) Cópia completa do Hermes (execução)
+
+Para materializar a cópia completa do repositório Hermes no workspace e aplicar overlay inicial da Olga:
+
+```bash
+./scripts/setup_olga_from_hermes.sh
+```
+
+Isso clona `NousResearch/hermes-agent` em `third_party/hermes-agent` e copia os artefatos da Olga para `third_party/hermes-agent/olga/`.
+
+
+
+## 11) Execução integrada (FNOL -> output Olga)
+
+Para executar uma chamada real de FNOL no harness e já obter saída no formato Olga:
+
+```bash
+python olga_run_flow.py --narrativa "Bati minha moto ontem" --segurado-id SEG-001
+```
+
+Opcionalmente, salve também o payload cru do harness:
+
+```bash
+python olga_run_flow.py --narrativa "Bati minha moto ontem" --segurado-id SEG-001 --save-harness-json /tmp/harness_output.json
+```

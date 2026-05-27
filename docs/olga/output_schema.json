@@ -1,0 +1,65 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "title": "OlgaAgentOutput",
+  "type": "object",
+  "required": ["intent", "next_action", "message_to_user"],
+  "additionalProperties": false,
+  "properties": {
+    "intent": {
+      "type": "string",
+      "enum": [
+        "fnol_triage",
+        "document_collection",
+        "document_decision",
+        "hitl_escalation",
+        "status_update"
+      ]
+    },
+    "next_action": {
+      "type": "string",
+      "enum": [
+        "ask_more_info",
+        "submit_fnol",
+        "request_documents",
+        "submit_documents",
+        "escalate_human",
+        "finalize"
+      ]
+    },
+    "message_to_user": {
+      "type": "string",
+      "minLength": 1
+    },
+    "protocolo": {
+      "type": ["string", "null"],
+      "pattern": "^88i-[0-9]{4}-[0-9]{8}$"
+    },
+    "decision_status": {
+      "type": ["string", "null"],
+      "enum": [
+        "approved_for_next_step",
+        "pending_documents",
+        "pending_manual_review",
+        "fraud_escalation",
+        "rejected_documentally",
+        null
+      ]
+    },
+    "needs_human_review": {
+      "type": ["boolean", "null"]
+    },
+    "missing_documents": {
+      "type": "array",
+      "items": { "type": "string", "minLength": 1 },
+      "default": []
+    },
+    "fraud_score": {
+      "type": ["integer", "null"],
+      "minimum": 0,
+      "maximum": 100
+    },
+    "alerta_operacional": {
+      "type": ["string", "null"]
+    }
+  }
+}
