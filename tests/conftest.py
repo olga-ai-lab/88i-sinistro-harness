@@ -838,3 +838,138 @@ def _live_system_guard(request, monkeypatch):
         pass
 
     yield
+
+
+# ── Phase 4: Integration Testing Fixtures ────────────────────────────────────
+#
+# Fixtures for real Supabase/Inngest integration tests. These use staging
+# credentials from environment variables and skip tests if credentials are not set.
+
+
+@pytest.fixture(scope="session")
+def supabase_staging_url() -> str:
+    """Get staging Supabase URL from env."""
+    url = os.getenv("SUPABASE_STAGING_URL")
+    if not url:
+        pytest.skip("SUPABASE_STAGING_URL not set")
+    return url
+
+
+@pytest.fixture(scope="session")
+def supabase_staging_key() -> str:
+    """Get staging Supabase service role key from env."""
+    key = os.getenv("SUPABASE_STAGING_KEY")
+    if not key:
+        pytest.skip("SUPABASE_STAGING_KEY not set")
+    return key
+
+
+@pytest.fixture
+async def supabase_client(supabase_staging_url: str, supabase_staging_key: str):
+    """Create staging Supabase client."""
+    try:
+        from supabase import create_client
+        client = create_client(supabase_staging_url, supabase_staging_key)
+        yield client
+        # Cleanup: delete test records
+        await cleanup_test_records(client)
+    except Exception as e:
+        pytest.skip(f"Could not connect to staging Supabase: {e}")
+
+
+@pytest.fixture(scope="session")
+def inngest_staging_key() -> str:
+    """Get staging Inngest API key from env."""
+    key = os.getenv("INNGEST_STAGING_KEY")
+    if not key:
+        pytest.skip("INNGEST_STAGING_KEY not set")
+    return key
+
+
+@pytest.fixture
+async def inngest_client(inngest_staging_key: str):
+    """Create staging Inngest client."""
+    try:
+        from inngest import Inngest
+        client = Inngest(api_key=inngest_staging_key, env="staging")
+        yield client
+    except Exception as e:
+        pytest.skip(f"Could not connect to staging Inngest: {e}")
+
+
+async def cleanup_test_records(client):
+    """Delete all test records from staging database."""
+    try:
+        response = client.table("context_cache").delete().eq("test", True).execute()
+        return bool(response.data)
+    except Exception as e:
+        print(f"Cleanup error: {e}")
+        return False
+
+
+@pytest.fixture
+def synthetic_sinistro_data():
+    """Generate synthetic sinistro data for testing."""
+    try:
+        from faker import Faker
+        fake = Faker("pt_BR")
+    except ImportError:
+        fake = None
+    
+    if fake:
+        return {
+            "sinistro_id": f"sin_{fake.bothify('????-####')}",
+            "sinistro_tipo": "roubo",
+            "segurado_nome": fake.name(),
+            "segurado_cpf": fake.cpf(),
+            "veiculo_tipo": "carro",
+            "veiculo_placa": fake.license_plate(),
+            "valor_sinistro": fake.random_int(min=5000, max=50000),
+            "data_sinistro": fake.date_object().isoformat(),
+            "descricao": fake.text(max_nb_chars=500),
+            "test": True  # Flag for cleanup
+        }
+    else:
+        # Fallback without Faker
+        import random
+        return {
+            "sinistro_id": f"sin_test_{random.randint(1000, 9999)}",
+            "sinistro_tipo": "roubo",
+            "segurado_nome": "Test User",
+            "segurado_cpf": "12345678901",
+            "veiculo_tipo": "carro",
+            "veiculo_placa": "ABC1234",
+            "valor_sinistro": random.randint(5000, 50000),
+            "data_sinistro": "2024-01-01",
+            "descricao": "Test sinistro for integration testing",
+            "test": True
+        }
+
+
+@pytest.fixture
+def synthetic_user_data():
+    """Generate synthetic user data for testing."""
+    try:
+        from faker import Faker
+        fake = Faker("pt_BR")
+    except ImportError:
+        fake = None
+    
+    if fake:
+        return {
+            "user_id": f"user_{fake.bothify('????-####')}",
+            "email": fake.email(),
+            "nome": fake.name(),
+            "telefone": fake.phone_number(),
+            "test": True
+        }
+    else:
+        # Fallback without Faker
+        import random
+        return {
+            "user_id": f"user_test_{random.randint(1000, 9999)}",
+            "email": "test@example.com",
+            "nome": "Test User",
+            "telefone": "(11) 98765-4321",
+            "test": True
+        }
