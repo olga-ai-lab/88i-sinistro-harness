@@ -1,0 +1,20 @@
+services:
+  - type: web
+    name: octa-sinistro-harness
+    runtime: docker
+    plan: standard
+    healthCheckPath: /health
+    region: ohio
+    
+    numInstances: 1
+    autoDeploy: true
+    
+    envVars:
+      - key: PORT
+        value: "3000"
+      - key: NODE_ENV
+        value: production
+      - key: LOG_LEVEL
+        value: info
+      - key: PYTHONUNBUFFERED
+        value: "1"
