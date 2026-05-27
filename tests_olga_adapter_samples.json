@@ -1,0 +1,20 @@
+[
+  {
+    "input": {
+      "proxima_acao": "solicitar_esclarecimento",
+      "mensagem_ao_segurado": "Pode enviar BO e atestado?",
+      "protocolo": "88i-2026-00000001",
+      "alerta_operacional": null
+    }
+  },
+  {
+    "input": {
+      "protocolo": "88i-2026-00000001",
+      "decision_status": "pending_documents",
+      "needs_human_review": false,
+      "missing_documents": ["boletim_ocorrencia"],
+      "fraud_score": 22,
+      "recommended_next_action": "Solicitar BO"
+    }
+  }
+]
