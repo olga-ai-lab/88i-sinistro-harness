@@ -1,0 +1,227 @@
+# Hermes Agent — Configuração Olga AI / 88i Sinistros
+# Profile: olga
+# Uso: hermes --profile olga
+# Versão: 1.0.0 (27 maio 2026)
+# Status: Production-ready
+
+version: "1.0.0"
+profile: olga
+description: "Agente Olga para 88i Seguradora Digital — Processamento de Sinistros"
+
+# Services & Credentials
+services:
+  anthropic:
+    api_key: "${ANTHROPIC_API_KEY}"
+    default_model: "claude-haiku-4-5-20251001"
+    max_tokens: 4096
+
+  inngest:
+    api_key: "${INNGEST_API_KEY}"
+    base_url: "https://api.inngest.com"
+    app_id: "octa-processor"
+
+  langfuse:
+    public_key: "${LANGFUSE_PUBLIC_KEY}"
+    secret_key: "${LANGFUSE_SECRET_KEY}"
+    base_url: "https://cloud.langfuse.com"
+    enabled: true
+
+  supabase:
+    url: "${SUPABASE_URL}"
+    anon_key: "${SUPABASE_ANON_KEY}"
+    db_name: "octa_claims"
+
+  prometheus:
+    enabled: true
+    port: 9090
+    scrape_interval: 30s
+
+# Skills & Plugins
+skills:
+  enabled:
+    - olga-88i-sinistro-agent
+    - sinistro-analyzer
+    - claim-processor
+  disabled: []
+
+plugins:
+  enabled:
+    - inngest-event-handler
+    - langfuse-tracer
+    - prometheus-metrics
+    - supabase-persistence
+  disabled: []
+
+# Agent Configuration
+agent:
+  max_iterations: 90
+  model: "claude-haiku-4-5-20251001"
+  provider: "anthropic"
+  temperature: 0.3
+  top_p: 0.9
+  budget: 100
+  timeout_seconds: 300
+  enable_caching: true
+  cache_ttl_minutes: 60
+
+# Performance SLAs (milliseconds)
+performance:
+  extract_latency_ms: 100
+  fraud_detection_ms: 150
+  context_injection_ms: 50
+  plugin_load_ms: 200
+  state_save_ms: 300
+  overall_timeout_ms: 10000
+
+# Routing Rules
+routing:
+  rules:
+    - pattern: "AP|Assistência Pessoal"
+      queue: "claims.ap.queue"
+      priority: 10
+      sla_minutes: 60
+    
+    - pattern: "DITA|Diária|Daily"
+      queue: "claims.dita.queue"
+      priority: 15
+      sla_minutes: 120
+    
+    - pattern: "Impedimento|Trabalho"
+      queue: "claims.impedimento.queue"
+      priority: 12
+      sla_minutes: 90
+
+# Fraud Detection Rules
+fraud_detection:
+  enabled: true
+  threshold: 0.7
+  high_risk_threshold: 0.85
+  models:
+    - name: "ensemble"
+      type: "logistic_regression"
+      features:
+        - claim_amount
+        - customer_age
+        - claim_frequency
+        - time_since_last_claim
+
+# Context Injection
+context:
+  enabled: true
+  sources:
+    - supabase.customers
+    - supabase.claim_history
+    - supabase.fraud_flags
+  cache_ttl_minutes: 30
+
+# Logging & Monitoring
+logging:
+  level: "INFO"
+  format: "json"
+  handlers:
+    - type: "file"
+      path: "~/.hermes/logs/olga.log"
+      rotation: "daily"
+      retention_days: 30
+    
+    - type: "file"
+      path: "~/.hermes/logs/olga-errors.log"
+      level: "ERROR"
+      rotation: "daily"
+      retention_days: 90
+
+monitoring:
+  prometheus_enabled: true
+  langfuse_enabled: true
+  sentry_enabled: false
+  datadog_enabled: false
+
+# Security
+security:
+  encryption:
+    enabled: true
+    algorithm: "AES-256-GCM"
+    key_rotation_days: 90
+  
+  rate_limiting:
+    enabled: true
+    requests_per_minute: 1000
+    burst_allowance: 100
+  
+  api_key_validation:
+    enabled: true
+    rotation_days: 60
+  
+  audit_logging:
+    enabled: true
+    log_all_decisions: true
+    log_path: "~/.hermes/logs/olga-audit.log"
+
+# Gateway Configuration
+gateway:
+  enabled: false
+  host: "0.0.0.0"
+  port: 8000
+  debug: false
+  
+  platforms:
+    telegram:
+      enabled: true
+      token: "${TELEGRAM_BOT_TOKEN}"
+    
+    webhook:
+      enabled: true
+      endpoint: "/webhook/claims"
+      secret: "${WEBHOOK_SECRET}"
+
+# Session & State Management
+session:
+  backend: "sqlite"
+  path: "~/.hermes/sessions/olga.db"
+  auto_save: true
+  save_interval_seconds: 30
+  compression: true
+
+# Memory & Caching
+memory:
+  provider: "honcho"
+  enabled: true
+  auto_save: true
+  save_on_message: true
+  summary_threshold: 50
+
+cache:
+  provider: "redis"
+  enabled: true
+  ttl_seconds: 3600
+  max_size_gb: 5
+
+# Deployment
+deployment:
+  target: "render.com"
+  environment: "staging"
+  port: 3000
+  cpu_limit: 2
+  memory_limit_gb: 4
+  auto_deploy: true
+  health_check_interval_seconds: 30
+
+# Features
+features:
+  streaming: true
+  tool_calling: true
+  structured_output: true
+  vision: true
+  audio: false
+  video: false
+
+# Display & UI
+display:
+  theme: olga
+  banner: true
+  spinner: true
+  colors:
+    primary: "#0066CC"
+    success: "#00CC66"
+    warning: "#FFAA00"
+    error: "#CC0000"
