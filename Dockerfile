@@ -40,8 +40,8 @@ USER appuser
 HEALTHCHECK --interval=30s --timeout=10s --start-period=5s --retries=3 \
     CMD curl -f http://localhost:3000/health || exit 1
 
-# Expose port
+# Expose port (Render will route to this)
 EXPOSE 3000
 
-# Run application (use sh -c to expand PORT env var)
-CMD sh -c "python -m uvicorn main:app --host 0.0.0.0 --port ${PORT:-3000}"
+# Run application on port 3000 (read PORT env var via entrypoint script)
+CMD ["sh", "-c", "python -m uvicorn main:app --host 0.0.0.0 --port ${PORT:-3000}"]
