@@ -179,3 +179,15 @@ python olga_bootstrap.py docs --protocolo 88i-2026-00000001 --file /caminho/bo.p
 ```
 
 Objetivo: permitir validação fim-a-fim do contrato HTTP antes de plugar no runtime Hermes.
+
+
+
+## 10) Cópia completa do Hermes (execução)
+
+Para materializar a cópia completa do repositório Hermes no workspace e aplicar overlay inicial da Olga:
+
+```bash
+./scripts/setup_olga_from_hermes.sh
+```
+
+Isso clona `NousResearch/hermes-agent` em `third_party/hermes-agent` e copia os artefatos da Olga para `third_party/hermes-agent/olga/`.
