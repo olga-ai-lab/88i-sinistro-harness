@@ -46,7 +46,11 @@ class SecurityHeadersMiddleware(BaseHTTPMiddleware):
         response = await call_next(request)
 
         # Remove Server header to avoid information disclosure
-        response.headers.pop("server", None)
+        # MutableHeaders doesn't have .pop() in newer Starlette, use del instead
+        try:
+            del response.headers["server"]
+        except KeyError:
+            pass
 
         # Prevent MIME type sniffing
         response.headers["X-Content-Type-Options"] = "nosniff"
