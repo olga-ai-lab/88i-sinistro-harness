@@ -207,3 +207,4 @@ Quality gate: **score_geral >= 80%** → CI passa.
 - SAC: 0800 718 7813
 - WhatsApp: +55 11 97803-8881
 # Force rebuild trigger (qui 28 mai 2026 10:02:20 -03)
+# Clean rebuild with verified imports (qui 28 mai 2026 10:37:40 -03)
