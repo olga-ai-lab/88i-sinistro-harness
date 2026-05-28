@@ -206,3 +206,4 @@ Quality gate: **score_geral >= 80%** → CI passa.
 - Sinistros: sinistrosapdelivery@88i.io
 - SAC: 0800 718 7813
 - WhatsApp: +55 11 97803-8881
+# Force rebuild trigger (qui 28 mai 2026 10:02:20 -03)
