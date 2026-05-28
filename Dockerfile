@@ -36,8 +36,10 @@ COPY . .
 RUN useradd -m -u 1000 appuser && chown -R appuser:appuser /app
 USER appuser
 
-# Health check
-HEALTHCHECK --interval=30s --timeout=10s --start-period=5s --retries=3 \
+# Health check (disabled during container startup to avoid false negatives)
+# Note: start-period=30s gives app time to initialize BAML compilation
+# This check runs AFTER startup, every 30s, with 10s timeout
+HEALTHCHECK --interval=30s --timeout=10s --start-period=30s --retries=3 \
     CMD curl -f http://localhost:3000/health || exit 1
 
 # Expose port (Render will route to this)
