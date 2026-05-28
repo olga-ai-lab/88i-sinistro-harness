@@ -1,0 +1,22 @@
+# Minimal test Dockerfile - for debugging deployment issues
+# This is a simplified version to test basic HTTP connectivity
+
+FROM python:3.13-slim
+
+WORKDIR /app
+
+# Install only FastAPI and uvicorn
+RUN pip install --no-cache-dir fastapi uvicorn[standard]
+
+# Copy minimal app
+COPY main_minimal.py main.py
+
+# Expose port
+EXPOSE 3000
+
+# Health check with proper timing
+HEALTHCHECK --interval=30s --timeout=10s --start-period=10s --retries=3 \
+    CMD python3 -c "import urllib.request; urllib.request.urlopen('http://localhost:3000/health')" || exit 1
+
+# Run app
+CMD ["python3", "-m", "uvicorn", "main:app", "--host", "0.0.0.0", "--port", "3000"]
