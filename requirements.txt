@@ -1,3 +1,4 @@
+# Force fresh install to resolve baml-py cache issue (2026-05-27 21:30)
 baml-py==0.221.0
 langgraph==1.1.8
 python-dotenv==1.0.1
