@@ -1,0 +1,15 @@
+.git
+.gitignore
+node_modules
+.env.local
+.venv
+__pycache__
+*.pyc
+.DS_Store
+tests/
+docs/
+*.md
+main_backup_full.py
+main_minimal.py
+Dockerfile
+docker-compose.yml

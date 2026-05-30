@@ -1,0 +1,24 @@
+{
+  "version": 2,
+  "builds": [
+    {
+      "src": "api/main.py",
+      "use": "@vercel/python"
+    }
+  ],
+  "routes": [
+    {
+      "src": "/(.*)",
+      "dest": "api/main.py"
+    }
+  ],
+  "env": {
+    "ANTHROPIC_API_KEY": "@ANTHROPIC_API_KEY",
+    "SUPABASE_URL": "@SUPABASE_URL",
+    "SUPABASE_KEY": "@SUPABASE_KEY",
+    "INNGEST_EVENT_KEY": "@INNGEST_EVENT_KEY",
+    "INNGEST_SIGNING_KEY": "@INNGEST_SIGNING_KEY",
+    "LANGFUSE_PUBLIC_KEY": "@LANGFUSE_PUBLIC_KEY",
+    "LANGFUSE_SECRET_KEY": "@LANGFUSE_SECRET_KEY"
+  }
+}
